@@ -9,7 +9,7 @@ to log structured risks into the Django database.
 from typing import Dict, Any
 from langchain_core.tools import tool
 from django.core.exceptions import ValidationError
-from riskchain.models import Risk
+from supplychains.models import Risk
 
 @tool
 def create_risk_entry(name: str, description: str, risk_level: str, risk_score: float = 0.0, source: str = None) -> Dict[str, Any]:
@@ -40,6 +40,12 @@ def create_risk_entry(name: str, description: str, risk_level: str, risk_score: 
             risk_score=risk_score,
             source=source
         )
+        print("Risk created successfully:")
+        print({"name":name[:255],
+            "description":description,
+            "risk_level":risk_level.lower(),
+            "risk_score":risk_score,
+            "source":source})
 
         return {
             "status": "success",

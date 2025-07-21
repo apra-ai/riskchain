@@ -49,6 +49,9 @@ def get_geopolitical_risks(query: str, sourcelang: str = "en", maxrecords: int =
             return {"error": "No articles found."}
 
         results = [{"title": article.get("title", ""), "url": article.get("url", "")} for article in data["articles"]]
+        print("Geopolitical risks retrieved successfully:")
+        print({"query": query, "results": results})
+        
         return {"query": query, "results": results}
 
     except Exception as e:
