@@ -10,7 +10,7 @@ requirements: Node.js online downloaden (npm wird dann automatisch heruntergelad
 
 # start backend
 
-requirements: Pytohn online herinterladen
+requirements: Python online herunterladen
 
 1. in "backend" navigieren (cd backend)
 2. python -m venv .venv
