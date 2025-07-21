@@ -2,6 +2,7 @@
 /frontend/node_modules/
 /frontend/.next
 /backend/.venv
+/backend/riskchain/__pycache__
 /backend/riskchain/db.sql*
 /backend/riskchain/test*
 .idea
