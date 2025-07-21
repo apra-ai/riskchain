@@ -25,3 +25,16 @@ requirements: Python online herunterladen
     superuser erstellen: python manage.py createsuperuser
         -> dann terminal befolgen (email kann man weg lassen)
         diese daten am besten merken die brauchst du auch um dich ins adminpanel "http://localhost:8000/admin" ein zu loggen
+
+
+# updaten requirements.txt
+
+pip freeze > requirements.txt
+
+# Codequalität garantieren
+
+pylint datei.py
+
+oder
+
+pylint [ordner]
