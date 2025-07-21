@@ -11,7 +11,7 @@ from langchain_core.tools import tool
 import requests
 
 @tool
-def get_geopolitical_risks(query: str = "Taiwan conflict", sourcelang: str = "en", maxrecords: int = 5) -> Dict[str, Any]:
+def get_geopolitical_risks(query: str, sourcelang: str = "en", maxrecords: int = 5) -> Dict[str, Any]:
     """
     Retrieve recent geopolitical news articles using the GDELT API.
 
