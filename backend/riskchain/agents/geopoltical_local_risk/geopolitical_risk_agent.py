@@ -1,8 +1,7 @@
 """Geopolitical & Local Risk agent factory."""
 from langgraph.prebuilt import create_react_agent
 
-from .geopolitical_risk_tools import get_geopolitical_risks
-from ..tools import create_risk_entry
+from .geopolitical_risk_tools import get_geopolitical_risks, create_risk_entry_geo
 
 
 def create_geopolitical_risk_agent(llm):
@@ -13,7 +12,7 @@ def create_geopolitical_risk_agent(llm):
     """
     return create_react_agent(
         model=llm,
-        tools=[get_geopolitical_risks, create_risk_entry],
+        tools=[get_geopolitical_risks, create_risk_entry_geo],
         prompt="""You are a geopolitical and local risk analysis agent assisting in automated supply chain risk detection.
 
 Your tools:

@@ -57,3 +57,59 @@ def get_geopolitical_risks(query: str, sourcelang: str = "en", maxrecords: int =
     except Exception as e:
         logger.error(f"GDELT API error: {str(e)}")
         return {"error": f"Failed to retrieve geopolitical risks: {str(e)}"}
+
+@tool
+def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_score: float = 0.0, source: str = None) -> Dict[str, Any]:
+    """
+    Create a new Risk entry in the database.
+
+    This tool allows agents to save identified risks with structured metadata.
+
+    Args:
+        name: Short name/title of the risk.
+        description: Detailed description of the risk.
+        risk_level: Risk severity ('low', 'medium', 'high').
+        risk_score: Numeric score representing severity (0.0–1.0).
+        source: Optional HTTPS URL that links to the source of the information.
+
+    Returns:
+        Dictionary with the created risk ID or error message.
+    """
+    print("Creating risk entry with parameters:")
+    print({
+        "name": name,
+        "description": description,
+        "risk_level": risk_level,
+        "risk_score": risk_score,
+        "source": source
+    })
+    try:
+        if source and not source.startswith("https://"):
+            raise ValidationError("URL must start with 'https://'")
+
+        risk = Risk.objects.create(
+            name=name[:255],
+            description=description,
+            risk_level=risk_level.lower(),
+            risk_score=risk_score,
+            source=source,
+            risk_type=0
+        )
+        print("Risk created successfully:")
+        print({"name":name[:255],
+            "description":description,
+            "risk_level":risk_level.lower(),
+            "risk_score":risk_score,
+            "source":source})
+
+        return {
+            "status": "success",
+            "risk_id": risk.id,
+            "name": risk.name,
+            "risk_level": risk.risk_level,
+            "risk_score": risk.risk_score
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to create Risk: {str(e)}")
+        return {"status": "error", "message": str(e)}
