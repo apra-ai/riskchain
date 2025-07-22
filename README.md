@@ -38,3 +38,10 @@ pylint datei.py
 oder
 
 pylint [ordner]
+
+# Start AI-Agent Orchestrator with shell
+
+from agents.orchestrator_agent import process_node_with_supervisor
+from supplychains.models import Node
+node1 = Node.objects.all()[22]
+chunks = process_node_with_supervisor(node1)    
