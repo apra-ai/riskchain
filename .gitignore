@@ -3,8 +3,10 @@
 /frontend/.next
 /frontend/package-lock.json
 /backend/.venv
-/backend/riskchain/__pycache__
+*__pycache__
 /backend/riskchain/db.sql*
 /backend/riskchain/test*
+*.env
 .idea
 .DS_Store
+*.pyc
