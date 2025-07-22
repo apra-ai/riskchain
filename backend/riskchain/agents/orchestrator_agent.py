@@ -15,6 +15,7 @@ from langchain_anthropic import ChatAnthropic
 from langgraph_supervisor import create_supervisor
 
 from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopolitical_risk_agent
+from agents.logistics_portwatch_risk.logistics_portwatch_agent import create_logistics_port_agent
 from supplychains.models import Node, Edge
 
 load_dotenv()
@@ -55,7 +56,7 @@ LLM = ChatAnthropic(
 )
 
 
-def create_risk_supervisor(geopolitical_risk_agent):
+def create_risk_supervisor(geopolitical_risk_agent, logistics_port_agent):
     """Create and compile the supervisor coordinating all risk analysis agents."""
 
 #     prompt_finished = """You are a senior risk manager supervising a team of AI risk analysis agents. Your role is to coordinate the evaluation of supply chain risks across multiple dimensions and deliver actionable risk assessments to human decision-makers.
@@ -101,7 +102,7 @@ def create_risk_supervisor(geopolitical_risk_agent):
         agents=[
             geopolitical_risk_agent,
             # environmental_risk_agent,
-            # logistics_disruption_agent,
+            logistics_port_agent,
             # weather_disaster_agent,
         ],
         model=LLM,
@@ -116,6 +117,14 @@ Your responsibilities:
 - Validate the relevance and completeness of the analysis
 - Ensure any detected risk with medium or high severity is saved to the database
 - Deliver a structured, clear summary of geopolitical risks for decision-makers
+
+2. Logistics Port Activity Agent – Monitors port-level activity from IMF PortWatch, such as high vessel or container traffic. Detects signs of congestion or logistic slowdowns that could impact shipping lanes.
+
+Your responsibilities:
+- Analyze port activity and report abnormal container traffic or congestion
+- Classify disruption impact as HIGH, MEDIUM or LOW
+- Save MEDIUM or HIGH disruptions using the appropriate tool (if implemented)
+
 
 End your analysis in the following format:
 
@@ -164,8 +173,9 @@ def process_edge_with_supervisor(node: Node) -> List[Dict[str, Any]]:
     # ---------------------------------------------------------------------------
 
     geopolitical_risk_agent = create_geopolitical_risk_agent(LLM,node.id)
+    logistics_port_agent = create_logistics_port_agent(LLM, node.id)
 
-    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent)
+    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent, logistics_port_agent)
 
     # logger.info("")
     # logger.info("🚀 Starting supervisor-based claim processing…")
