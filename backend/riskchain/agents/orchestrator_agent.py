@@ -55,18 +55,8 @@ LLM = ChatAnthropic(
     max_tokens=4096,
 )
 
-# ---------------------------------------------------------------------------
-# Create specialized agents
-# ---------------------------------------------------------------------------
 
-geopolitical_risk_agent = create_geopolitical_risk_agent(LLM)
-
-# ---------------------------------------------------------------------------
-# Compile supervisor
-# ---------------------------------------------------------------------------
-
-
-def create_risk_supervisor():
+def create_risk_supervisor(geopolitical_risk_agent):
     """Create and compile the supervisor coordinating all risk analysis agents."""
 
 #     prompt_finished = """You are a senior risk manager supervising a team of AI risk analysis agents. Your role is to coordinate the evaluation of supply chain risks across multiple dimensions and deliver actionable risk assessments to human decision-makers.
@@ -155,9 +145,6 @@ Your output supports strategic decisions in procurement, logistics, and supply c
     return supervisor
 
 
-risk_supervisor = create_risk_supervisor()
-
-
 # ---------------------------------------------------------------------------
 # Public helper
 # ---------------------------------------------------------------------------
@@ -173,6 +160,13 @@ def process_edge_with_supervisor(node: Node) -> List[Dict[str, Any]]:
     - Workflow state transitions
     - Timing information
     """
+    # ---------------------------------------------------------------------------
+    # Create agents
+    # ---------------------------------------------------------------------------
+
+    geopolitical_risk_agent = create_geopolitical_risk_agent(LLM,node.id)
+
+    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent)
 
     # logger.info("")
     # logger.info("🚀 Starting supervisor-based claim processing…")
@@ -203,6 +197,10 @@ def process_edge_with_supervisor(node: Node) -> List[Dict[str, Any]]:
             debug=False  # Disable debug information temporarily
         ):
             step_count += 1
+            print("-----------------------")
+            print(f"Step {step_count}:")
+            print("-----------------------")
+            print(f"{chunk.get('message', {}).get('content', '')}")
             chunks.append(chunk)
 
         # logger.info("✅ Workflow completed in %d steps", step_count)

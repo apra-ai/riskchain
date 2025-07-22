@@ -4,7 +4,7 @@ from langgraph.prebuilt import create_react_agent
 from .geopolitical_risk_tools import get_geopolitical_risks, create_risk_entry_geo
 
 
-def create_geopolitical_risk_agent(llm):
+def create_geopolitical_risk_agent(llm, node_id: int):
     """Return a configured Geopolitical & Local Risk agent.
 
     Args:
@@ -13,7 +13,7 @@ def create_geopolitical_risk_agent(llm):
     return create_react_agent(
         model=llm,
         tools=[get_geopolitical_risks, create_risk_entry_geo],
-        prompt="""You are a geopolitical and local risk analysis agent assisting in automated supply chain risk detection.
+        prompt=f"""You are a geopolitical and local risk analysis agent assisting in automated supply chain risk detection.
 
 Your tools:
 - `get_geopolitical_risks`: Fetches recent media coverage related to geopolitical risks such as conflicts, political instability, or diplomatic tensions. Articles may or may not be relevant — use your judgment to determine their impact.
@@ -25,6 +25,7 @@ Your task:
 3. For each valid risk you identify, assign a risk level (`high`, `medium`, `low`) and explain your reasoning.
 4. **If a risk is assessed as `medium`**, call `create_risk_entry` to register it in the system.
 5. **IMPORTANT:** When calling `create_risk_entry`, you **must include a valid HTTPS URL** from the news source as the `source` field. The risk cannot be saved without this.
+6. **IMPORTANT:** When calling `create_risk_entry`, you **must include the node_id:{node_id}** as the `node_id` field to ensure proper traceability.
 
 Always output structured and actionable summaries for risk or supply chain managers. Focus on clarity, justification, and explainability.""",
         name="geopolitical_local_risk_agent",
