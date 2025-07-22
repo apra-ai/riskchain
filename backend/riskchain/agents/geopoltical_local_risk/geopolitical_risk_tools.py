@@ -58,7 +58,7 @@ def get_geopolitical_risks(query: str, sourcelang: str = "en", maxrecords: int =
         return {"query": query, "results": results}
 
     except Exception as e:
-        logger.error(f"GDELT API error: {str(e)}")
+        print(f"GDELT API error: {str(e)}")
         return {"error": f"Failed to retrieve geopolitical risks: {str(e)}"}
 
 @tool
