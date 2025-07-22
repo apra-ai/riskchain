@@ -5,13 +5,12 @@ and exposes a `process_claim_with_supervisor` helper used by the service layer.
 """
 from __future__ import annotations
 
-import json
-import logging
+# import logging
 import os
 from typing import Any, Dict, List
 
+# from langchain_openai import AzureChatOpenAI
 from dotenv import load_dotenv
-from langchain_openai import AzureChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langgraph_supervisor import create_supervisor
 
@@ -206,5 +205,7 @@ def process_edge_with_supervisor(node: Node) -> List[Dict[str, Any]]:
         # logger.info("✅ Workflow completed in %d steps", step_count)
         return chunks
     except Exception as e:
+        print("An error occurred during workflow processing:"
+              f" {str(e)}")
         # logger.error("Error in workflow processing: %s", e, exc_info=True)
         raise

@@ -9,6 +9,7 @@ It can be used by a multi-agent system to analyze emerging threats.
 from typing import Dict, Any
 from langchain_core.tools import tool
 import requests
+from pydantic import ValidationError
 
 from supplychains.models import Risk, Node
 
@@ -54,7 +55,7 @@ def get_geopolitical_risks(query: str, sourcelang: str = "en", maxrecords: int =
         print("Geopolitical risks retrieved successfully:")
         for article in results:
             print(f"Title: {article['title']}, URL: {article['url']}")
-        
+
         return {"query": query, "results": results}
 
     except Exception as e:
@@ -94,7 +95,7 @@ def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_sco
         )
         print("Risk created successfully:")
         print(f"Name: {name[:255]}, Description: {description}, Risk Level: {risk_level.lower()}, Risk Score: {risk_score}, Source: {source}, Node ID: {node_id}")
-        
+
         if node_id is not None:
             node = Node.objects.get(id=node_id)
             node.risks.add(risk)
