@@ -1,15 +1,26 @@
-from django.db import models
-
 # Create your models here.
 from django.db import models
 
-from django.db import models
+def validate_https(value):
+    if value and not value.startswith("https://"):
+        raise ValidationError("URL must start with 'https://'")
 
 class Risk(models.Model):
+    RISK_TYPE_CHOICES = [
+        (0, 'Geopolitical Risk'),
+        (1, 'Environmental Risk'),
+        (2, 'Logistics Risk'),
+        (3, 'Weather Risk'),
+    ]
     name = models.CharField(max_length=255)
     description = models.TextField()
     risk_level = models.CharField(max_length=50, choices=[('high', 'High'), ('medium', 'Medium'), ('low', 'Low')])
-    risk_score = models.FloatField(default=0.0)  
+    risk_score = models.FloatField(default=0.0)
+    source = models.URLField(blank=True, null=True, validators=[validate_https])
+    risk_type = models.IntegerField(
+        choices=RISK_TYPE_CHOICES,
+        default=0
+    )
 
     def __str__(self):
         return self.name
