@@ -57,7 +57,9 @@ AZURE_OPENAI_API_VERSION="2024-12-01-preview"
 
 im code:
 from dotenv import load_dotenv
+import os
 load_dotenv()
+
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
