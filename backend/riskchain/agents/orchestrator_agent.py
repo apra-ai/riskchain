@@ -17,6 +17,8 @@ from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopoli
 from agents.weather_natural_disaster_risk.weather_risk_agent import create_weather_risk_agent
 from agents.logistics_portwatch_risk.logistics_portwatch_agent import create_logistics_portwatch_agent
 from supplychains.models import Node, Edge
+from langchain.schema import HumanMessage, AIMessage
+from langchain_core.messages import ToolMessage
 
 load_dotenv()
 
@@ -144,7 +146,54 @@ Your output supports high-stakes decisions in procurement, logistics, and supply
 # ---------------------------------------------------------------------------
 # Public helper
 # ---------------------------------------------------------------------------
+def log_chunk_step(chunk: dict, step_count: int):
+    print("\n" + "=" * 60)
+    print(f"🧠 Step {step_count}")
 
+    agent_name = list(chunk.keys())[0]
+    print(f"🤖 Agent: {agent_name}")
+
+    messages = chunk.get(agent_name, {}).get("messages", "")
+    for message in messages:
+        if isinstance(message, HumanMessage):
+            print("\n💬 Human Messages:")
+            content = message.content
+            
+            if content:
+                print("\n📨 Message:")
+                print(content)
+        elif isinstance(message, ToolMessage):
+            print("\n💬 Tool Messages:")
+            content = message.content
+            
+            if content:
+                print("\n📨 Message:")
+                print(content)
+        elif isinstance(message, AIMessage):
+            print("\n💬 AI Messages:")
+            content = message.content
+            additional_kwargs = message.additional_kwargs
+            tool_calls = additional_kwargs.get("tool_calls", [])
+
+            if content:
+                print("\n📨 Message:")
+                print(content)
+
+            for tool_call in tool_calls:
+                print("\n🔧 Tool Call:")
+                tool_function = tool_call.get("function", {})
+                tool_name = tool_function.get("name", "Unknown")
+                tool_args = tool_function.get("args", {})
+
+                print(f"Tool: {tool_name}")
+                print("Arguments:")
+                print(tool_args)
+
+            # if transition := chunk.get("transition"):
+            #     print("\n🔄 State Transition:")
+            #     print(transition)
+
+    print("=" * 60 + "\n")
 
 def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
     """Run the claim through the supervisor and return detailed trace information.
@@ -196,10 +245,7 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
             debug=False  # Disable debug information temporarily
         ):
             step_count += 1
-            print("-----------------------")
-            print(f"Step {step_count}:")
-            print("-----------------------")
-            print(f"{chunk.get('message', {}).get('content', '')}")
+            log_chunk_step(chunk, step_count)
             chunks.append(chunk)
 
         # logger.info("✅ Workflow completed in %d steps", step_count)
