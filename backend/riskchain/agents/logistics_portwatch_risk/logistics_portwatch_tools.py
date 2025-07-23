@@ -2,7 +2,8 @@
 """
 Logistics Port Activity Tool – Daily Port Activity API
 
-This tool retrieves daily port metrics from the IMF PortWatch dataset,
+This tool retrieves daily port metrics from the IMF PortWatch dataset
+(https://portwatch.imf.org/datasets/959214444157458aad969389b3ebe1a0/api),
 including portcalls and import/export container volumes.
 """
 
