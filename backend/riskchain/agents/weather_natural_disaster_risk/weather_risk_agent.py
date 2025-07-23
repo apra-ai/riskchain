@@ -1,7 +1,7 @@
 """Weather & Natural Disaster Risk Agent Factory."""
 from langgraph.prebuilt import create_react_agent
 
-from .weather_risk_tools import get_disasters_near_location#, get_earthquakes_near_location, 
+from .weather_risk_tools import get_disasters_near_location#, get_earthquakes_near_location,
 
 
 def create_weather_risk_agent(llm, node_id: int):

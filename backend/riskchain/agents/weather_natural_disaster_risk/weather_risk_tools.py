@@ -1,11 +1,18 @@
+#!/usr/bin/env python3
+"""
+Natural disasters Risk Retrieval Tools
+
+"""
+
+from math import radians, sin, cos, sqrt, atan2
+import xml.etree.ElementTree as ET
+import traceback
+# from datetime import datetime
+
 from langchain_core.tools import tool
 from geopy.geocoders import Nominatim
 import requests
-from math import radians, sin, cos, sqrt, atan2
-from datetime import datetime
-import xml.etree.ElementTree as ET
 from supplychains.models import Risk, Node
-import traceback
 
 
 # @tool
@@ -157,18 +164,18 @@ def get_disasters_near_location(location_name: str, radius_km: float = 500, node
 
             # Haversine distance check
             def haversine(lat1, lon1, lat2, lon2):
-                R = 6371
+                r = 6371
                 dlat = radians(lat2 - lat1)
                 dlon = radians(lon2 - lon1)
                 a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
                 c = 2 * atan2(sqrt(a), sqrt(1 - a))
-                return R * c
+                return r * c
 
             distance_km = haversine(lat, lon, float(latitude), float(longitude))
             print(f"Distance from {location_name} to disaster: {distance_km:.2f} km")
             if distance_km > radius_km:
                 continue
-            
+
             title = item.find("title").text
             description = item.find("description").text
             link = item.find("link").text
@@ -192,7 +199,7 @@ def get_disasters_near_location(location_name: str, radius_km: float = 500, node
 
                 risk = Risk.objects.create(
                     name=f"{event_type} near {location_name}",
-                    description=f"{event_type} reported by GDACS: {title} ({alert_level}) approx. {round(distance_km)}km from {location_name}",
+                    description=f"{event_type} reported by GDACS: {title} ({alert_level}) approx. {round(distance_km)}km from {location_name}. {description}",
                     risk_level=risk_level,
                     risk_score=risk_score,
                     source=link,
