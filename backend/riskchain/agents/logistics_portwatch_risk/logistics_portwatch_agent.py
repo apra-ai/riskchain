@@ -1,42 +1,36 @@
-"""
-Logistics Port Agent Factory
-
-This agent uses IMF PortWatch data to analyze global port activity
-and detect potential supply chain risks such as congestion, limited throughput,
-or unusual vessel patterns.
-"""
-
+"""Logistics Port Agent Factory"""
 from langgraph.prebuilt import create_react_agent
-from logistics_portwatch_tools import get_port_activity_data
+
+from .logistics_portwatch_tools import get_port_activity_data, create_risk_entry_log
 
 
-def create_logistics_port_agent(llm, node_id: int):
-    """Return a configured Logistical Portwatch agent.
+def create_logistics_portwatch_agent(llm, node_id: int):
+    """Return a configured Logistical Activity Risk agent.
 
     Args:
         llm: An instantiated LangChain LLM shared by the app.
     """
     return create_react_agent(
         model=llm,
-        tools=[get_port_activity_data],
-        prompt=f"""You are a logistics intelligence agent specialized in global port monitoring.
-Your data source is the IMF PortWatch ArcGIS API, providing real-time information about vessel activity and container traffic at ports worldwide.
+        tools=[get_port_activity_data, create_risk_entry_log],
+        prompt=f"""You are a logistics risk analysis agent specialized in monitoring global port
+        activity to detect potential disruptions in international supply chains.
 
-Your available tool:
-- `get_port_activity_data`: Retrieves daily port metrics. You can use optional filters:
-  - `country` (e.g., "Germany")
-  - `portname` (e.g., "Hamburg")
-  - `maxresults` (default: 10)
+        Your tools:
+        - `get_port_activity_data`: Retrieves daily metrics from the PortWatch dataset, including container volumes and port call data for specific ports or countries.
+        - `create_risk_entry_log`: Used to log relevant logistics-related risks into the system, including name, description, risk level, risk score, and a reliable source reference.
 
-Your responsibilities:
-1. Use the tool to retrieve current port data based on the region, country, or port specified.
-2. Look for signs of logistical disruptions such as unusual congestion, significant increase/decrease in container traffic, or abnormal portcalls.
-3. If applicable, compare activity levels to detect spikes or slowdowns.
-4. Assess the impact level as HIGH, MEDIUM, or LOW and explain your reasoning based on the data.
-5. If a noteworthy anomaly exists, reference `node_id:{node_id}` to allow traceability in the system.
-6. Summarize findings for decision-makers clearly and concisely, focusing on operational relevance for global supply chains.
+        Your task:
+        1. When asked about a country or port, call `get_port_activity_data` to retrieve recent activity data.
+        2. Analyze the metrics critically to detect potential logistics risks such as:
+           - sudden drops in import/export container volumes
+           - high portcall counts suggesting congestion
+           - complete standstills or abnormal activity patterns
+        3. For each anomaly you identify, assess the potential supply chain impact and classify the risk level as `high`, `medium`, or `low`.
+        4. **If a risk is assessed as `medium`**, call `create_risk_entry_log` to register it in the system.
+        5. **IMPORTANT:** When calling `create_risk_entry_log`, you **must include a reference to the metric anomaly and date** as the `source` field (e.g., "PortWatch data from 2025-07-21").
+        6. **IMPORTANT:** When calling `create_risk_entry_log`, you **must include the node_id:{node_id}** as the `node_id` field to ensure proper traceability.
 
-Avoid speculation, rely strictly on the available data, and structure your conclusions for clarity and strategic use.
-""",
-        name="logistics_port_agent",
+        Always explain your reasoning clearly, avoid speculation, and focus 
+        on delivering actionable insights for supply chain managers."""
     )

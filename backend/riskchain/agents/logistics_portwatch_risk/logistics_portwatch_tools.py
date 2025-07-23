@@ -11,7 +11,8 @@ from typing import Dict, Any
 from datetime import datetime
 import requests
 from langchain_core.tools import tool
-
+from pydantic import ValidationError
+from supplychains.models import Risk, Node
 
 @tool
 def get_port_activity_data(
@@ -86,6 +87,65 @@ def get_port_activity_data(
             })
 
         return {"results": results}
+
+    except Exception as e:
+        print(f"Portwatch Error: {str(e)}")
+        return {"error": f"Failed to retrieve logistical activities: {str(e)}"}
+
+
+@tool
+def create_risk_entry_log(name: str,
+                          description: str,
+                          risk_level: str,
+                          risk_score: float = 0.0,
+                          source: str = None,
+                          node_id: int = None
+                          ) -> Dict[str, Any]:
+    """
+    Create a new Risk entry in the database.
+
+    This tool allows agents to save identified risks with structured metadata.
+
+    Args:
+        name: Short name/title of the risk.
+        description: Detailed description of the risk.
+        risk_level: Risk severity ('low', 'medium', 'high').
+        risk_score: Numeric score representing severity (0.0–1.0).
+        source: Optional HTTPS URL that links to the source of the information.
+        node_id: Node ID to associate the risk with a specific node.
+
+    Returns:
+        Dictionary with the created risk ID or error message.
+    """
+
+    try:
+        if source and not source.startswith("https://"):
+            raise ValidationError("URL must start with 'https://'")
+
+        risk = Risk.objects.create(
+            name=name[:255],
+            description=description,
+            risk_level=risk_level.lower(),
+            risk_score=risk_score,
+            source=source,
+            risk_type=2
+        )
+        print("Risk created successfully:")
+        print(f"Name: {name[:255]}, Description: {description}, Risk Level: {risk_level.lower()}, "
+              f"Risk Score: {risk_score}, Source: {source}, Node ID: {node_id}")
+
+        if node_id is not None:
+            node = Node.objects.get(id=node_id)
+            node.risks.add(risk)
+            node.save()
+
+        return {
+            "status": "success",
+            "risk_id": risk.id,
+            "name": risk.name,
+            "risk_level": risk.risk_level,
+            "risk_score": risk.risk_score
+        }
 
     except Exception as e:
         print(f"Error creating risk entry: {str(e)}")
