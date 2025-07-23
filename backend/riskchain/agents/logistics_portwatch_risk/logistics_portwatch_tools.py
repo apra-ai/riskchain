@@ -1,59 +1,78 @@
 #!/usr/bin/env python3
 """
-Logistics Port Activity Tool
+Logistics Port Activity Tool – Daily Port Activity API
 
-This module queries the IMF PortWatch ArcGIS API to retrieve port-level activity data,
-such as vessel counts and regional context. (https://portwatch.imf.org/datasets/acc668d199d1472abaaf2467133d4ca4/api)
-It supports structured supply chain analysis by extracting port-specific metrics useful for disruption detection.
+This tool retrieves daily port metrics from the IMF PortWatch dataset,
+including portcalls and import/export container volumes.
 """
 
 from typing import Dict, Any
 from langchain_core.tools import tool
 import requests
+from datetime import datetime
 
 @tool
-def get_port_activity_data(max_results: int = 5) -> Dict[str, Any]:
+def get_port_activity_data(country: str = None, portname: str = None, maxresults: int = 10) -> Dict[str, Any]:
     """
-    Retrieve port activity data from PortWatch ArcGIS FeatureServer.
+    Retrieve current daily port activity data from the PortWatch API.
 
     Args:
-        max_results: Maximum number of ports to return. (Default: 5)
+        country: Optional country name to filter ports (e.g., "Germany").
+        portname: Optional port name to filter results (e.g., "Hamburg").
+        maxresults: Max number of records to return (default: 10)
 
     Returns:
-        Dictionary with a list of ports and activity metrics:
+        Dictionary with a list of port metrics:
+        - date
         - portname
         - country
-        - continent
-        - vessel_count_total
-        - vessel_count_container
-        - industry_top1
-        - coordinates (lat, lon)
+        - portcalls_container
+        - import_container
+        - export_container
     """
 
     try:
-        url = "https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/PortWatch_ports_database/FeatureServer/0/query?where=1%3D1&outFields=portname,country,ISO3,continent,lat,lon,vessel_count_total,vessel_count_container,vessel_count_tanker,industry_top1,portid,vessel_count_RoRo&outSR=4326&f=json"
+        url = "https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/Daily_Trade_Data/FeatureServer/0/query"
 
-        response = requests.get(url)
+        # Build SQL WHERE clause based on provided filters
+        conditions = []
+        if country:
+            conditions.append(f"country = '{country}'")
+        if portname:
+            conditions.append(f"portname = '{portname}'")
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+        params = {
+            "where": where_clause,
+            "outFields": ",".join([
+                "date", "portname", "country",
+                "portcalls_container", "import_container", "export_container"
+            ]),
+            "orderByFields": "date DESC",
+            "resultRecordCount": maxresults,
+            "f": "json"
+        }
+
+        response = requests.get(url, params=params)
         response.raise_for_status()
         data = response.json()
 
         if "features" not in data:
-            return {"error": "No port data found."}
+            return {"error": "No port activity data found."}
 
         results = []
-        for feature in data["features"][:max_results]:
+        for feature in data["features"]:
             attr = feature["attributes"]
+            timestamp = attr.get("date")
+            readable_date = datetime.fromtimestamp(timestamp / 1000).strftime("%Y-%m-%d") if timestamp else "unknown"
+
             results.append({
+                "date": readable_date,
                 "port": attr.get("portname", "unknown"),
                 "country": attr.get("country", "unknown"),
-                "continent": attr.get("continent", "unknown"),
-                "vessel_count_total": attr.get("vessel_count_total", 0),
-                "vessel_count_container": attr.get("vessel_count_container", 0),
-                "industry_top1": attr.get("industry_top1", "unknown"),
-                "coordinates": {
-                    "lat": attr.get("lat", None),
-                    "lon": attr.get("lon", None)
-                }
+                "portcalls_container": attr.get("portcalls_container", 0),
+                "import_container": attr.get("import_container", 0),
+                "export_container": attr.get("export_container", 0)
             })
 
         return {"results": results}
