@@ -50,9 +50,18 @@ chunks = process_node_with_supervisor(node1)
 
 im ordner wo manage.py liegt eine .env datei erstellen (also im riskchain ordner)
 
+AZURE_OPENAI_API_KEY="Key"
+AZURE_OPENAI_ENDPOINT="link"
+AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o"
+AZURE_OPENAI_API_VERSION="2024-12-01-preview"
+
+im code:
 from dotenv import load_dotenv
 load_dotenv()
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
 
 dadurch bekommt man key aus .env
 dann muss man nur noch in der .env die API keys eintragen

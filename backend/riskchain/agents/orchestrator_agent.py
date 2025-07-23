@@ -9,9 +9,8 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List
 
-# from langchain_openai import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from dotenv import load_dotenv
-from langchain_anthropic import ChatAnthropic
 from langgraph_supervisor import create_supervisor
 
 from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopolitical_risk_agent
@@ -21,40 +20,23 @@ from supplychains.models import Node, Edge
 load_dotenv()
 
 
-# def _build_llm() -> AzureChatOpenAI:
-#     """Instantiate AzureChatOpenAI with centralized config."""
-#     from app.core.config import get_settings
+def _build_llm() -> AzureChatOpenAI:
+    """Instantiate AzureChatOpenAI with centralized config."""
 
-#     settings = get_settings()
-#     endpoint = settings.azure_openai_endpoint
-#     deployment = settings.azure_openai_deployment_name or "gpt-4o"
-#     api_key = settings.azure_openai_api_key
+    AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+    AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+    AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+    AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
 
-#     logger.info("✅ Configuration loaded successfully")
-#     logger.info("Azure OpenAI Endpoint: %s", endpoint or "Not set")
-#     logger.info("Deployment Name: %s", deployment)
-#     logger.info("API Key configured: %s", "Yes" if api_key else "No")
+    return AzureChatOpenAI(
+            azure_deployment=AZURE_OPENAI_DEPLOYMENT_NAME,
+            api_key=AZURE_OPENAI_API_KEY,
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            api_version=AZURE_OPENAI_API_VERSION,
+            temperature=0.1,
+        )
 
-#     return AzureChatOpenAI(
-#             azure_deployment=deployment,
-#             api_key=api_key,
-#             azure_endpoint=endpoint,
-#             api_version="2024-08-01-preview",
-#             temperature=0.1,
-#         )
-
-# LLM = _build_llm()
-
-CLAUDE_MODEL = "claude-3-7-sonnet-20250219"
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-
-LLM = ChatAnthropic(
-    model=CLAUDE_MODEL,
-    temperature=0.1,
-    api_key=ANTHROPIC_API_KEY,
-    max_tokens=4096,
-)
-
+LLM = _build_llm()
 
 def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent):
     """Create and compile the supervisor coordinating all risk analysis agents."""
