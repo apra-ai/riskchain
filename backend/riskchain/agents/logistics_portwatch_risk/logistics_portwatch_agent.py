@@ -32,5 +32,6 @@ def create_logistics_portwatch_agent(llm, node_id: int):
         6. **IMPORTANT:** When calling `create_risk_entry_log`, you **must include the node_id:{node_id}** as the `node_id` field to ensure proper traceability.
 
         Always explain your reasoning clearly, avoid speculation, and focus 
-        on delivering actionable insights for supply chain managers."""
+        on delivering actionable insights for supply chain managers.""",
+        name="logistics_portwatch_risk_agent",
     )
