@@ -15,6 +15,7 @@ from langgraph_supervisor import create_supervisor
 
 from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopolitical_risk_agent
 from agents.weather_natural_disaster_risk.weather_risk_agent import create_weather_risk_agent
+from agents.logistics_portwatch_risk.logistics_portwatch_agent import create_logistics_portwatch_agent
 from supplychains.models import Node, Edge
 
 load_dotenv()
@@ -38,7 +39,7 @@ def _build_llm() -> AzureChatOpenAI:
 
 LLM = _build_llm()
 
-def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent):
+def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent, logistics_portwatch_agent):
     """Create and compile the supervisor coordinating all risk analysis agents."""
 
 #     prompt_finished = """You are a senior risk manager supervising a team of AI risk analysis agents. Your role is to coordinate the evaluation of supply chain risks across multiple dimensions and deliver actionable risk assessments to human decision-makers.
@@ -86,6 +87,7 @@ def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent):
             # environmental_risk_agent,
             # logistics_disruption_agent,
             weather_risk_agent,
+            logistics_portwatch_agent,
         ],
         model=LLM,
         prompt="""
@@ -97,13 +99,16 @@ Your agents:
 
 2. **Weather & Natural Disaster Risk Agent** – Evaluates natural hazards such as earthquakes that may disrupt supply chains. It queries external data (e.g., USGS) and automatically logs risks for affected locations if they meet defined magnitude thresholds (≥ 4.5).
 
+3. Logistics Port Activity Agent – Monitors port-level activity from IMF PortWatch, such as high vessel or container traffic. Detects signs of congestion or logistic slowdowns that could impact shipping lanes.
+
 Your responsibilities:
-- Trigger both agents based on the user's query, location, or supply chain asset
+- Trigger the agents based on the user's query, location, or supply chain asset
 - Ensure each agent returns structured and relevant findings
 - Validate that risks with medium or high severity are correctly logged to the database
-- Summarize both geopolitical and natural hazard risks for decision-makers in a clear, actionable format
+- Summarize both geopolitical, natural hazard and logistic port risks for decision-makers in a clear, actionable format
 
-End your combined analysis in the following structure:
+
+End your analysis in the following format:
 
 ---
 
@@ -157,8 +162,10 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
 
     geopolitical_risk_agent = create_geopolitical_risk_agent(LLM,node.id)
     weather_risk_agent = create_weather_risk_agent(LLM,node.id)
+    logistics_portwatch_agent = create_logistics_portwatch_agent(LLM, node.id)
 
-    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent)
+
+    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent, logistics_portwatch_agent)
 
     # logger.info("")
     # logger.info("🚀 Starting supervisor-based claim processing…")
