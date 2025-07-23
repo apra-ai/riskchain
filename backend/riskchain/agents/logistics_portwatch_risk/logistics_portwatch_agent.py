@@ -7,10 +7,15 @@ or unusual vessel patterns.
 """
 
 from langgraph.prebuilt import create_react_agent
-from .logistics_portwatch_tools import get_port_activity_data
+from logistics_portwatch_tools import get_port_activity_data
 
 
 def create_logistics_port_agent(llm, node_id: int):
+    """Return a configured Logistical Portwatch agent.
+
+    Args:
+        llm: An instantiated LangChain LLM shared by the app.
+    """
     return create_react_agent(
         model=llm,
         tools=[get_port_activity_data],

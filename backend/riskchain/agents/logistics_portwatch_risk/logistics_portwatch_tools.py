@@ -7,12 +7,17 @@ including portcalls and import/export container volumes.
 """
 
 from typing import Dict, Any
-from langchain_core.tools import tool
-import requests
 from datetime import datetime
+import requests
+from langchain_core.tools import tool
+
 
 @tool
-def get_port_activity_data(country: str = None, portname: str = None, maxresults: int = 10) -> Dict[str, Any]:
+def get_port_activity_data(
+    country: str = None,
+    portname: str = None,
+    maxresults: int = 10
+) -> Dict[str, Any]:
     """
     Retrieve current daily port activity data from the PortWatch API.
 
@@ -30,11 +35,12 @@ def get_port_activity_data(country: str = None, portname: str = None, maxresults
         - import_container
         - export_container
     """
-
     try:
-        url = "https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/Daily_Trade_Data/FeatureServer/0/query"
+        url = (
+            "https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest"
+            "/services/Daily_Trade_Data/FeatureServer/0/query"
+        )
 
-        # Build SQL WHERE clause based on provided filters
         conditions = []
         if country:
             conditions.append(f"country = '{country}'")
@@ -53,7 +59,7 @@ def get_port_activity_data(country: str = None, portname: str = None, maxresults
             "f": "json"
         }
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
 
@@ -64,7 +70,10 @@ def get_port_activity_data(country: str = None, portname: str = None, maxresults
         for feature in data["features"]:
             attr = feature["attributes"]
             timestamp = attr.get("date")
-            readable_date = datetime.fromtimestamp(timestamp / 1000).strftime("%Y-%m-%d") if timestamp else "unknown"
+            readable_date = (
+                datetime.fromtimestamp(timestamp / 1000).strftime("%Y-%m-%d")
+                if timestamp else "unknown"
+            )
 
             results.append({
                 "date": readable_date,
@@ -78,4 +87,5 @@ def get_port_activity_data(country: str = None, portname: str = None, maxresults
         return {"results": results}
 
     except Exception as e:
-        return {"error": str(e)}
+        print(f"Error creating risk entry: {str(e)}")
+        return {"status": "error", "message": str(e)}
