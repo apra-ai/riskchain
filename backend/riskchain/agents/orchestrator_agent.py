@@ -15,6 +15,7 @@ from langchain_anthropic import ChatAnthropic
 from langgraph_supervisor import create_supervisor
 
 from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopolitical_risk_agent
+from agents.weather_natural_disaster_risk.weather_risk_agent import create_weather_risk_agent
 from supplychains.models import Node, Edge
 
 load_dotenv()
@@ -55,7 +56,7 @@ LLM = ChatAnthropic(
 )
 
 
-def create_risk_supervisor(geopolitical_risk_agent):
+def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent):
     """Create and compile the supervisor coordinating all risk analysis agents."""
 
 #     prompt_finished = """You are a senior risk manager supervising a team of AI risk analysis agents. Your role is to coordinate the evaluation of supply chain risks across multiple dimensions and deliver actionable risk assessments to human decision-makers.
@@ -102,43 +103,52 @@ def create_risk_supervisor(geopolitical_risk_agent):
             geopolitical_risk_agent,
             # environmental_risk_agent,
             # logistics_disruption_agent,
-            # weather_disaster_agent,
+            weather_risk_agent,
         ],
         model=LLM,
         prompt="""
-You are a senior risk manager supervising an AI risk analysis agent. Your role is to coordinate the evaluation of geopolitical and local risks that may impact supply chains and deliver actionable insights to human decision-makers.
+You are a senior risk manager supervising a team of AI risk analysis agents. Your role is to coordinate the evaluation of supply chain risks across multiple dimensions and deliver actionable risk assessments to human decision-makers.
 
-Your agent:
-1. Geopolitical & Local Risk Agent – Identifies risks from political instability, conflict, diplomatic tensions, or regional unrest. It uses real-time media coverage and structured signals to detect relevant risks. If the agent evaluates a risk as MEDIUM or HIGH, it must create a risk entry using its `create_risk_entry` tool and include the article source URL.
+Your agents:
+
+1. **Geopolitical & Local Risk Agent** – Identifies risks from political instability, conflict, diplomatic tensions, or regional unrest. It uses real-time media coverage and structured signals to detect relevant risks. If the agent evaluates a risk as MEDIUM or HIGH, it must create a risk entry using its `create_risk_entry` tool and include the article source URL.
+
+2. **Weather & Natural Disaster Risk Agent** – Evaluates natural hazards such as earthquakes that may disrupt supply chains. It queries external data (e.g., USGS) and automatically logs risks for affected locations if they meet defined magnitude thresholds (≥ 4.5).
 
 Your responsibilities:
-- Trigger the Geopolitical & Local Risk Agent based on the user’s query
-- Validate the relevance and completeness of the analysis
-- Ensure any detected risk with medium or high severity is saved to the database
-- Deliver a structured, clear summary of geopolitical risks for decision-makers
+- Trigger both agents based on the user's query, location, or supply chain asset
+- Ensure each agent returns structured and relevant findings
+- Validate that risks with medium or high severity are correctly logged to the database
+- Summarize both geopolitical and natural hazard risks for decision-makers in a clear, actionable format
 
-End your analysis in the following format:
+End your combined analysis in the following structure:
 
-RISK_ANALYSIS_COMPLETE
+---
 
-RISK SUMMARY:
-- Concise overview of geopolitical risk signals detected
-- Priority countries, regions, or issues
+**RISK_ANALYSIS_COMPLETE**
 
-RISK DETAILS:
+**RISK SUMMARY:**
+- Concise overview of geopolitical and environmental risk signals
+- Affected countries, cities, or supply chain nodes
+- Brief priority assessment
+
+**RISK DETAILS:**
 - Risk level: [HIGH / MEDIUM / LOW]
+- Risk type: [Geopolitical / Earthquake / Other Natural Hazard]
 - Risk description: [Short explanation]
-- Source: [Article or media URL used as input]
+- Source: [News article or scientific data link]
 
-STRATEGIC IMPACT:
-- How this risk could affect supply chains, suppliers, or transport routes
-- Implications for cost, delivery times, or operational reliability
+**STRATEGIC IMPACT:**
+- How the risk could impact supply chains, suppliers, or transport routes
+- Implications for cost, delays, or operational stability
 
-RECOMMENDATIONS:
+**RECOMMENDATIONS:**
 - Suggested mitigation or monitoring actions
-- Whether the issue should be escalated to a risk governance team
+- Whether to escalate to risk governance or crisis response teams
 
-Your output supports strategic decisions in procurement, logistics, and supply chain management. Your insights must be well-structured, clear, and grounded in the underlying data.""",
+---
+
+Your output supports high-stakes decisions in procurement, logistics, and supply chain risk governance. Be precise, structured, and only report risks supported by real-time or verifiable data.""",
     ).compile()
 
     return supervisor
@@ -149,7 +159,7 @@ Your output supports strategic decisions in procurement, logistics, and supply c
 # ---------------------------------------------------------------------------
 
 
-def process_edge_with_supervisor(node: Node) -> List[Dict[str, Any]]:
+def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
     """Run the claim through the supervisor and return detailed trace information.
 
     Returns comprehensive trace data including:
@@ -164,8 +174,9 @@ def process_edge_with_supervisor(node: Node) -> List[Dict[str, Any]]:
     # ---------------------------------------------------------------------------
 
     geopolitical_risk_agent = create_geopolitical_risk_agent(LLM,node.id)
+    weather_risk_agent = create_weather_risk_agent(LLM,node.id)
 
-    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent)
+    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent)
 
     # logger.info("")
     # logger.info("🚀 Starting supervisor-based claim processing…")

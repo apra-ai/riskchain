@@ -38,3 +38,23 @@ pylint datei.py
 oder
 
 pylint [ordner]
+
+# Start AI-Agent Orchestrator with shell
+
+from agents.orchestrator_agent import process_node_with_supervisor
+from supplychains.models import Node
+node1 = Node.objects.all()[22]
+chunks = process_node_with_supervisor(node1)
+
+# benutzen der API Keys
+
+im ordner wo manage.py liegt eine .env datei erstellen (also im riskchain ordner)
+
+from dotenv import load_dotenv
+load_dotenv()
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+
+dadurch bekommt man key aus .env
+dann muss man nur noch in der .env die API keys eintragen
+das benutzt man da die API keys Geheim sind und man die dadurch nicht im code verlauf hat
+(sonst kann ejder in der History von commits beispielseise den KEY sehen)
