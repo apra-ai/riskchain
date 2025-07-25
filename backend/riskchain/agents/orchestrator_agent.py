@@ -15,7 +15,6 @@ from langgraph_supervisor import create_supervisor
 
 from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopolitical_risk_agent
 from agents.weather_natural_disaster_risk.weather_risk_agent import create_weather_risk_agent
-from agents.logistics_portwatch_risk.logistics_portwatch_agent import create_logistics_portwatch_agent
 from supplychains.models import Node, Edge
 from langchain.schema import HumanMessage, AIMessage
 from langchain_core.messages import ToolMessage
@@ -41,7 +40,7 @@ def _build_llm() -> AzureChatOpenAI:
 
 LLM = _build_llm()
 
-def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent, logistics_portwatch_agent):
+def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent):
     """Create and compile the supervisor coordinating all risk analysis agents."""
 
 #     prompt_finished = """You are a senior risk manager supervising a team of AI risk analysis agents. Your role is to coordinate the evaluation of supply chain risks across multiple dimensions and deliver actionable risk assessments to human decision-makers.
@@ -87,9 +86,7 @@ def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent, logistic
         agents=[
             geopolitical_risk_agent,
             # environmental_risk_agent,
-            # logistics_disruption_agent,
             weather_risk_agent,
-            logistics_portwatch_agent,
         ],
         model=LLM,
         prompt="""
@@ -211,10 +208,9 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
 
     geopolitical_risk_agent = create_geopolitical_risk_agent(LLM,node.id)
     weather_risk_agent = create_weather_risk_agent(LLM,node.id)
-    logistics_portwatch_agent = create_logistics_portwatch_agent(LLM, node.id)
 
 
-    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent, logistics_portwatch_agent)
+    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent)
 
     # logger.info("")
     # logger.info("🚀 Starting supervisor-based claim processing…")
