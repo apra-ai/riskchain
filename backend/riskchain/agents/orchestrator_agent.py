@@ -16,6 +16,8 @@ from langgraph_supervisor import create_supervisor
 from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopolitical_risk_agent
 from agents.weather_natural_disaster_risk.weather_risk_agent import create_weather_risk_agent
 from supplychains.models import Node, Edge
+from langchain.schema import HumanMessage, AIMessage
+from langchain_core.messages import ToolMessage
 
 load_dotenv()
 
@@ -33,7 +35,7 @@ def _build_llm() -> AzureChatOpenAI:
             api_key=AZURE_OPENAI_API_KEY,
             azure_endpoint=AZURE_OPENAI_ENDPOINT,
             api_version=AZURE_OPENAI_API_VERSION,
-            temperature=0.1,
+            temperature=0.0,
         )
 
 LLM = _build_llm()
@@ -84,7 +86,6 @@ def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent):
         agents=[
             geopolitical_risk_agent,
             # environmental_risk_agent,
-            # logistics_disruption_agent,
             weather_risk_agent,
         ],
         model=LLM,
@@ -97,13 +98,16 @@ Your agents:
 
 2. **Weather & Natural Disaster Risk Agent** – Evaluates natural hazards such as earthquakes that may disrupt supply chains. It queries external data (e.g., USGS) and automatically logs risks for affected locations if they meet defined magnitude thresholds (≥ 4.5).
 
+3. **Logistics Port Activity Agent – Monitors port-level activity from IMF PortWatch, such as high vessel or container traffic. Detects signs of congestion or logistic slowdowns that could impact shipping lanes.
+
 Your responsibilities:
-- Trigger both agents based on the user's query, location, or supply chain asset
+- Trigger the agents based on the user's query, location, or supply chain asset
 - Ensure each agent returns structured and relevant findings
 - Validate that risks with medium or high severity are correctly logged to the database
-- Summarize both geopolitical and natural hazard risks for decision-makers in a clear, actionable format
+- Summarize both geopolitical, natural hazard and logistic port risks for decision-makers in a clear, actionable format
 
-End your combined analysis in the following structure:
+
+End your analysis in the following format:
 
 ---
 
@@ -139,7 +143,54 @@ Your output supports high-stakes decisions in procurement, logistics, and supply
 # ---------------------------------------------------------------------------
 # Public helper
 # ---------------------------------------------------------------------------
+def log_chunk_step(chunk: dict, step_count: int):
+    print("\n" + "=" * 60)
+    print(f"🧠 Step {step_count}")
 
+    agent_name = list(chunk.keys())[0]
+    print(f"🤖 Agent: {agent_name}")
+
+    messages = chunk.get(agent_name, {}).get("messages", "")
+    for message in messages:
+        if isinstance(message, HumanMessage):
+            print("\n💬 Human Messages:")
+            content = message.content
+            
+            if content:
+                print("\n📨 Message:")
+                print(content)
+        elif isinstance(message, ToolMessage):
+            print("\n💬 Tool Messages:")
+            content = message.content
+            
+            if content:
+                print("\n📨 Message:")
+                print(content)
+        elif isinstance(message, AIMessage):
+            print("\n💬 AI Messages:")
+            content = message.content
+            additional_kwargs = message.additional_kwargs
+            tool_calls = additional_kwargs.get("tool_calls", [])
+
+            if content:
+                print("\n📨 Message:")
+                print(content)
+
+            for tool_call in tool_calls:
+                print("\n🔧 Tool Call:")
+                tool_function = tool_call.get("function", {})
+                tool_name = tool_function.get("name", "Unknown")
+                tool_args = tool_function.get("args", {})
+
+                print(f"Tool: {tool_name}")
+                print("Arguments:")
+                print(tool_args)
+
+            # if transition := chunk.get("transition"):
+            #     print("\n🔄 State Transition:")
+            #     print(transition)
+
+    print("=" * 60 + "\n")
 
 def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
     """Run the claim through the supervisor and return detailed trace information.
@@ -157,6 +208,7 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
 
     geopolitical_risk_agent = create_geopolitical_risk_agent(LLM,node.id)
     weather_risk_agent = create_weather_risk_agent(LLM,node.id)
+
 
     risk_supervisor = create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent)
 
@@ -189,10 +241,7 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
             debug=False  # Disable debug information temporarily
         ):
             step_count += 1
-            print("-----------------------")
-            print(f"Step {step_count}:")
-            print("-----------------------")
-            print(f"{chunk.get('message', {}).get('content', '')}")
+            log_chunk_step(chunk, step_count)
             chunks.append(chunk)
 
         # logger.info("✅ Workflow completed in %d steps", step_count)
@@ -200,5 +249,7 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
     except Exception as e:
         print("An error occurred during workflow processing:"
               f" {str(e)}")
+        traceback.print_exc()
+        
         # logger.error("Error in workflow processing: %s", e, exc_info=True)
         raise
