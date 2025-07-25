@@ -43,7 +43,7 @@ pylint [ordner]
 
 from agents.orchestrator_agent import process_node_with_supervisor
 from supplychains.models import Node
-node1 = Node.objects.all()[22]
+node1 = Node.objects.all()[23]
 chunks = process_node_with_supervisor(node1)
 
 # benutzen der API Keys

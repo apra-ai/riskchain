@@ -39,8 +39,7 @@ def get_port_activity_data(
     """
     try:
         url = (
-            "https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest"
-            "/services/Daily_Trade_Data/FeatureServer/0/query"
+            "https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/Daily_Trade_Data/FeatureServer/0/query"
         )
 
         conditions = []
@@ -90,6 +89,7 @@ def get_port_activity_data(
 
     except Exception as e:
         print(f"Portwatch Error: {str(e)}")
+        traceback.print_exc()
         return {"error": f"Failed to retrieve logistical activities: {str(e)}"}
 
 
@@ -111,16 +111,18 @@ def create_risk_entry_log(name: str,
         description: Detailed description of the risk.
         risk_level: Risk severity ('low', 'medium', 'high').
         risk_score: Numeric score representing severity (0.0–1.0).
-        source: Optional HTTPS URL that links to the source of the information.
+        source: String with Portname, Location and date.
         node_id: Node ID to associate the risk with a specific node.
 
     Returns:
         Dictionary with the created risk ID or error message.
     """
-
+    print(f"Creating risk entry: {name[:255]}, "
+          f"Description: {description}, "
+          f"Risk Level: {risk_level.lower()}, "
+          f"Risk Score: {risk_score}, "
+          f"Source: {source}, Node ID: {node_id}")
     try:
-        if source and not source.startswith("https://"):
-            raise ValidationError("URL must start with 'https://'")
 
         risk = Risk.objects.create(
             name=name[:255],
@@ -128,6 +130,7 @@ def create_risk_entry_log(name: str,
             risk_level=risk_level.lower(),
             risk_score=risk_score,
             source=source,
+            url="https://portwatch.imf.org/pages/port-monitor",
             risk_type=2
         )
         print("Risk created successfully:")
@@ -149,4 +152,5 @@ def create_risk_entry_log(name: str,
 
     except Exception as e:
         print(f"Error creating risk entry: {str(e)}")
+        traceback.print_exc()
         return {"status": "error", "message": str(e)}

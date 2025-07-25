@@ -93,7 +93,7 @@ from supplychains.models import Risk, Node
 #                 description=f"Earthquake detected with magnitude {magnitude} at {place} for the time {time}",
 #                 risk_level=risk_level.lower(),
 #                 risk_score=risk_score,
-#                 source=eq["url"],
+#                 url=eq["url"],
 #                 risk_type=3
 #             )
 #             print(f"Risk created: {risk.name}, Level: {risk_level}, Score: {risk_score}")
@@ -202,7 +202,7 @@ def get_disasters_near_location(location_name: str, radius_km: float = 500, node
                     description=f"{event_type} reported by GDACS: {title} ({alert_level}) approx. {round(distance_km)}km from {location_name}. {description}",
                     risk_level=risk_level,
                     risk_score=risk_score,
-                    source=link,
+                    url=link,
                     risk_type=3  # Environmental / Natural Disaster
                 )
                 print(f"Risk created: {risk.name}, Level: {risk_level}, Score: {risk_score}")

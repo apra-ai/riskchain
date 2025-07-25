@@ -36,7 +36,7 @@ def _build_llm() -> AzureChatOpenAI:
             api_key=AZURE_OPENAI_API_KEY,
             azure_endpoint=AZURE_OPENAI_ENDPOINT,
             api_version=AZURE_OPENAI_API_VERSION,
-            temperature=0.1,
+            temperature=0.0,
         )
 
 LLM = _build_llm()
@@ -253,5 +253,7 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
     except Exception as e:
         print("An error occurred during workflow processing:"
               f" {str(e)}")
+        traceback.print_exc()
+        
         # logger.error("Error in workflow processing: %s", e, exc_info=True)
         raise

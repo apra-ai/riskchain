@@ -63,7 +63,7 @@ def get_geopolitical_risks(query: str, sourcelang: str = "en", maxrecords: int =
         return {"error": f"Failed to retrieve geopolitical risks: {str(e)}"}
 
 @tool
-def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_score: float = 0.0, source: str = None, node_id: int = None) -> Dict[str, Any]:
+def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_score: float = 0.0, url: str = None, node_id: int = None) -> Dict[str, Any]:
     """
     Create a new Risk entry in the database.
 
@@ -74,7 +74,7 @@ def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_sco
         description: Detailed description of the risk.
         risk_level: Risk severity ('low', 'medium', 'high').
         risk_score: Numeric score representing severity (0.0–1.0).
-        source: Optional HTTPS URL that links to the source of the information.
+        url: Optional HTTPS URL that links to the source of the information.
         node_id: Node ID to associate the risk with a specific node.
 
     Returns:
@@ -82,7 +82,7 @@ def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_sco
     """
 
     try:
-        if source and not source.startswith("https://"):
+        if url and not url.startswith("https://"):
             raise ValidationError("URL must start with 'https://'")
 
         risk = Risk.objects.create(
@@ -90,7 +90,7 @@ def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_sco
             description=description,
             risk_level=risk_level.lower(),
             risk_score=risk_score,
-            source=source,
+            url=url,
             risk_type=0
         )
         print("Risk created successfully:")
