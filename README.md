@@ -41,10 +41,14 @@ pylint [ordner]
 
 # Start AI-Agent Orchestrator with shell
 
-from agents.orchestrator_agent import process_node_with_supervisor
-from supplychains.models import Node
-node1 = Node.objects.all()[23]
+from agents.orchestrator_agent import process_node_with_supervisor, process_edge_with_supervisor
+from supplychains.models import Node, Edge
+
+node1 = Node.objects.all()[0]
 chunks = process_node_with_supervisor(node1)
+
+edge1 = Edge.objects.all()[12]
+chunks = process_edge_with_supervisor(edge1)
 
 # benutzen der API Keys
 
