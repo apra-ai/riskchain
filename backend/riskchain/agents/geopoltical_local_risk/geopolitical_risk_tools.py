@@ -74,7 +74,7 @@ def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_sco
         description: Detailed description of the risk.
         risk_level: Risk severity ('low', 'medium', 'high').
         risk_score: Numeric score representing severity (0.0–1.0).
-        url: Optional HTTPS URL that links to the source of the information.
+        url: HTTPS URL that links to the source of the information.
         node_id: Node ID to associate the risk with a specific node.
 
     Returns:
@@ -91,10 +91,11 @@ def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_sco
             risk_level=risk_level.lower(),
             risk_score=risk_score,
             url=url,
+            source="GDELT API",
             risk_type=0
         )
         print("Risk created successfully:")
-        print(f"Name: {name[:255]}, Description: {description}, Risk Level: {risk_level.lower()}, Risk Score: {risk_score}, Source: {source}, Node ID: {node_id}")
+        print(f"Name: {name[:255]}, Description: {description}, Risk Level: {risk_level.lower()}, Risk Score: {risk_score}, Url: {url}, Node ID: {node_id}")
 
         if node_id is not None:
             node = Node.objects.get(id=node_id)
