@@ -15,6 +15,7 @@ from langgraph_supervisor import create_supervisor
 
 from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopolitical_risk_agent
 from agents.weather_natural_disaster_risk.weather_risk_agent import create_weather_risk_agent
+from agents.logistics_portwatch_risk.logistics_portwatch_agent import create_logistics_portwatch_agent
 from supplychains.models import Node, Edge
 from langchain.schema import HumanMessage, AIMessage
 from langchain_core.messages import ToolMessage
@@ -40,47 +41,8 @@ def _build_llm() -> AzureChatOpenAI:
 
 LLM = _build_llm()
 
-def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent):
+def create_risk_supervisor_node(geopolitical_risk_agent, weather_risk_agent):
     """Create and compile the supervisor coordinating all risk analysis agents."""
-
-#     prompt_finished = """You are a senior risk manager supervising a team of AI risk analysis agents. Your role is to coordinate the evaluation of supply chain risks across multiple dimensions and deliver actionable risk assessments to human decision-makers.
-
-# Your team consists of:
-# 1. Geopolitical & Local Risk Agent – Identifies risks from political instability, conflict, or regional unrest
-# 2. Environmental Risk Agent – Assesses pollution, regulation, and environmental compliance risks
-# 3. Logistics Disruption Agent – Detects transport or infrastructure-related supply chain disruptions
-# 4. Weather & Natural Disaster Agent – Monitors and flags risks from extreme weather or natural hazards
-
-# Your responsibilities:
-# - Coordinate and trigger the agents based on the context or query
-# - Aggregate their findings and validate the completeness of the analysis
-# - Ensure all medium or high risks are entered into the risk database via each agent’s `create_risk_entry` tool
-# - Present a clear, structured summary for decision-makers
-
-# You must end your analysis in the following format:
-
-# RISK_ANALYSIS_COMPLETE
-
-# RISK SUMMARY:
-# - Concise overview of major risk signals detected
-# - Priority regions or topics with elevated risk levels
-
-# RISK BREAKDOWN:
-# - [Agent Name]: [Short summary of identified risk or "No significant risk"]
-#   - Risk level: [HIGH/MEDIUM/LOW]
-#   - Relevant article or data source: [URL]
-
-# STRATEGIC IMPACT:
-# - How these risks could affect supply chains, sourcing, or logistics
-# - Supply chain nodes or partners likely to be affected
-# - Potential impact on cost, delays, or compliance
-
-# RECOMMENDATIONS:
-# - Mitigation steps or monitoring suggestions
-# - Which areas require immediate attention
-# - If relevant, propose escalation to internal risk governance teams
-
-# Your output should support strategic decisions in procurement, logistics, or supply chain operations. Accuracy, clarity, and explainability are essential."""
 
     supervisor = create_supervisor(
         agents=[
@@ -90,51 +52,110 @@ def create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent):
         ],
         model=LLM,
         prompt="""
-You are a senior risk manager supervising a team of AI risk analysis agents. Your role is to coordinate the evaluation of supply chain risks across multiple dimensions and deliver actionable risk assessments to human decision-makers.
+You are a senior supply chain risk supervisor managing a team of specialized AI agents. Each agent monitors a different risk dimension that may impact a logistics or supply chain node such as a port, airport, or distribution hub.
 
-Your agents:
+You receive detailed node data, including:
+- Name: [e.g., "Tokyo, Japan"]
+- Type: [e.g., "Logistics Port Distribution Hub"]
+- Description: [e.g., "Major distribution hub in Japan focused on Logistics Port"]
+- Current known risks: [e.g., "Uno Port Standstill"]
 
-1. **Geopolitical & Local Risk Agent** – Identifies risks from political instability, conflict, diplomatic tensions, or regional unrest. It uses real-time media coverage and structured signals to detect relevant risks. If the agent evaluates a risk as MEDIUM or HIGH, it must create a risk entry using its `create_risk_entry` tool and include the article source URL.
+Your assigned agents:
 
-2. **Weather & Natural Disaster Risk Agent** – Evaluates natural hazards such as earthquakes that may disrupt supply chains. It queries external data (e.g., USGS) and automatically logs risks for affected locations if they meet defined magnitude thresholds (≥ 4.5).
+1. **Geopolitical & Local Risk Agent** – Monitors regions for political unrest, regulatory changes, strikes, or diplomatic instability that could affect supply chains. Uses real-time data and news sources. Logs medium or high risks via `create_risk_entry` with article links.
 
-3. **Logistics Port Activity Agent – Monitors port-level activity from IMF PortWatch, such as high vessel or container traffic. Detects signs of congestion or logistic slowdowns that could impact shipping lanes.
+2. **Weather & Natural Hazard Agent** – Detects environmental risks such as typhoons, earthquakes, or flooding. Pulls structured data (e.g., USGS) and automatically logs events above critical thresholds (e.g. magnitude ≥ 4.5 or severe weather alerts).
 
 Your responsibilities:
-- Trigger the agents based on the user's query, location, or supply chain asset
-- Ensure each agent returns structured and relevant findings
-- Validate that risks with medium or high severity are correctly logged to the database
-- Summarize both geopolitical, natural hazard and logistic port risks for decision-makers in a clear, actionable format
+- Trigger appropriate agents based on the node's location and role in the supply chain
+- Collect structured, relevant findings per node
+- Validate and log all medium or high severity risks into the risk database
+- Return a clear, actionable risk report tailored for decision-makers in supply chain governance
 
-
-End your analysis in the following format:
+Format your output as follows:
 
 ---
 
 **RISK_ANALYSIS_COMPLETE**
 
-**RISK SUMMARY:**
-- Concise overview of geopolitical and environmental risk signals
-- Affected countries, cities, or supply chain nodes
-- Brief priority assessment
+**NODE:**  
+- Name: [e.g., Tokyo, Japan]  
+- Type: [e.g., Logistics Port Distribution Hub]  
+- Description: [Brief operational role of this node]
 
-**RISK DETAILS:**
-- Risk level: [HIGH / MEDIUM / LOW]
-- Risk type: [Geopolitical / Earthquake / Other Natural Hazard]
-- Risk description: [Short explanation]
-- Source: [News article or scientific data link]
+**RISK SUMMARY:**  
+- Overview of current and emerging geopolitical or environmental risks affecting this location  
+- Severity level: [HIGH / MEDIUM / LOW]  
+- Geographic scope: [City, region, country]
 
-**STRATEGIC IMPACT:**
-- How the risk could impact supply chains, suppliers, or transport routes
-- Implications for cost, delays, or operational stability
-
-**RECOMMENDATIONS:**
-- Suggested mitigation or monitoring actions
-- Whether to escalate to risk governance or crisis response teams
+**RISK DETAILS:**  
+- Risk type: [Geopolitical / Earthquake / Typhoon / Other]  
+- Description: [Short factual summary]  
+- Timeframe: [e.g., Current / Expected / Historical signal]  
+- Source: [Link to news or data source]
 
 ---
 
-Your output supports high-stakes decisions in procurement, logistics, and supply chain risk governance. Be precise, structured, and only report risks supported by real-time or verifiable data.""",
+Only report risks that are supported by reliable, real-time or verifiable data. Your insights directly inform operational and procurement strategies.
+""").compile()
+
+    return supervisor
+
+
+def create_risk_supervisor_edge(logistics_portwatch_agent):
+    """Create and compile the supervisor coordinating all risk analysis agents."""
+
+    supervisor = create_supervisor(
+        agents=[
+            logistics_portwatch_agent,
+        ],
+        model=LLM,
+        prompt=prompt="""
+You are a senior supply chain risk supervisor overseeing a network of AI agents that analyze transportation edges between supply chain nodes. Each edge represents a transport connection (e.g., air cargo, sea freight, trucking) with associated details like time, cost, and mode of transport.
+
+Your AI agents specialize in identifying real-world risks that might affect these transport connections. Your focus is on detecting risks that could disrupt, delay, or increase the cost of specific logistics routes.
+
+Each edge contains:
+- From node: [Start location]
+- To node: [End location]
+- Transport description: [e.g., "Air Cargo to New York"]
+- Mode of transportation: [e.g., Plane, Ship, Truck]
+- Time of transportation: [e.g., 3 days]
+- Cost of transportation: [e.g., 1800.0]
+
+Your responsibilities:
+- Trigger relevant agents (e.g., port activity analysis) based on the edge's route and transport mode
+- Evaluate whether real-time disruptions (e.g., port congestion, weather delays, strikes) are affecting the route
+- Confirm that any medium or high severity risks are logged appropriately
+- Return a structured risk assessment per edge that can support operational decisions
+
+Format your output as follows:
+
+---
+
+**RISK_ANALYSIS_COMPLETE**
+
+**EDGE:**  
+- From: [Start location]  
+- To: [End location]  
+- Transport mode: [Plane / Ship / etc.]  
+- Description: [Transport description]
+
+**RISK SUMMARY:**  
+- Key risks affecting this route  
+- Severity level: [HIGH / MEDIUM / LOW]  
+- Geographic scope: [Ports, cities, regions affected]
+
+**RISK DETAILS:**  
+- Risk type: [Port Congestion / Geopolitical / Weather / etc.]  
+- Description: [Short explanation]  
+- Timeframe: [e.g., Current, Expected this week]  
+- Source: [News link, live API source]
+
+---
+
+Be concise, rely on real-time data sources (e.g. IMF PortWatch), and provide actionable insights for logistics and procurement stakeholders.
+""",
     ).compile()
 
     return supervisor
@@ -210,7 +231,7 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
     weather_risk_agent = create_weather_risk_agent(LLM,node.id)
 
 
-    risk_supervisor = create_risk_supervisor(geopolitical_risk_agent, weather_risk_agent)
+    risk_supervisor = create_risk_supervisor_node(geopolitical_risk_agent, weather_risk_agent)
 
     # logger.info("")
     # logger.info("🚀 Starting supervisor-based claim processing…")
@@ -226,6 +247,70 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
                 f"name: {node.name}, "
                 f"type: {node.type}, "
                 f"description: {node.description}, "
+            ),
+        }
+    ]
+
+    chunks: List[Dict[str, Any]] = []
+    step_count = 0
+
+    # Enhanced streaming with detailed trace capture
+    try:
+        for chunk in risk_supervisor.stream(
+            {"messages": messages},
+            stream_mode="updates",  # Get individual node updates instead of full state
+            debug=False  # Disable debug information temporarily
+        ):
+            step_count += 1
+            log_chunk_step(chunk, step_count)
+            chunks.append(chunk)
+
+        # logger.info("✅ Workflow completed in %d steps", step_count)
+        return chunks
+    except Exception as e:
+        print("An error occurred during workflow processing:"
+              f" {str(e)}")
+        traceback.print_exc()
+        
+        # logger.error("Error in workflow processing: %s", e, exc_info=True)
+        raise
+
+def process_edge_with_supervisor(edge: Edge) -> List[Dict[str, Any]]:
+    """Run the claim through the supervisor and return detailed trace information.
+
+    Returns comprehensive trace data including:
+    - Agent interactions and handoffs
+    - Tool calls and results
+    - Message history per agent
+    - Workflow state transitions
+    - Timing information
+    """
+    # ---------------------------------------------------------------------------
+    # Create agents
+    # ---------------------------------------------------------------------------
+
+    logistics_portwatch_agent = create_logistics_portwatch_agent(LLM,edge.id)
+
+
+    risk_supervisor = create_risk_supervisor_edge(logistics_portwatch_agent)
+
+    # logger.info("")
+    # logger.info("🚀 Starting supervisor-based claim processing…")
+    # logger.info("📋 Processing Claim ID: %s",
+    #             claim_data.get("claim_id", "Unknown"))
+    # logger.info("%s", "=" * 60)
+
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                "Please process this claim through your team of specialists:"
+                f"from node: {edge.from_node.name}, "
+                f"to node: {edge.to_node.name}, "
+                f"transport_description: {edge.description}, "
+                f"mode of Transportation: {edge.mode}, "
+                f"time of Transportation: {edge.time}, "
+                f"cost of Transportation: {edge.cost}, "
             ),
         }
     ]
