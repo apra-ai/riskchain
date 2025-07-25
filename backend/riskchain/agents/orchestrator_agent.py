@@ -110,7 +110,7 @@ def create_risk_supervisor_edge(logistics_portwatch_agent):
             logistics_portwatch_agent,
         ],
         model=LLM,
-        prompt=prompt="""
+        prompt="""
 You are a senior supply chain risk supervisor overseeing a network of AI agents that analyze transportation edges between supply chain nodes. Each edge represents a transport connection (e.g., air cargo, sea freight, trucking) with associated details like time, cost, and mode of transport.
 
 Your AI agents specialize in identifying real-world risks that might affect these transport connections. Your focus is on detecting risks that could disrupt, delay, or increase the cost of specific logistics routes.
@@ -307,7 +307,7 @@ def process_edge_with_supervisor(edge: Edge) -> List[Dict[str, Any]]:
                 "Please process this claim through your team of specialists:"
                 f"from node: {edge.from_node.name}, "
                 f"to node: {edge.to_node.name}, "
-                f"transport_description: {edge.description}, "
+                f"transport_description: {edge.transport_description}, "
                 f"mode of Transportation: {edge.mode}, "
                 f"time of Transportation: {edge.time}, "
                 f"cost of Transportation: {edge.cost}, "
