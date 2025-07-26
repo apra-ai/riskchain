@@ -7,6 +7,7 @@ from __future__ import annotations
 
 # import logging
 import os
+import traceback
 from typing import Any, Dict, List
 
 from langchain_openai import AzureChatOpenAI
@@ -291,7 +292,6 @@ def process_edge_with_supervisor(edge: Edge) -> List[Dict[str, Any]]:
 
     logistics_portwatch_agent = create_logistics_portwatch_agent(LLM,edge.id)
 
-
     risk_supervisor = create_risk_supervisor_edge(logistics_portwatch_agent)
 
     # logger.info("")
@@ -304,13 +304,13 @@ def process_edge_with_supervisor(edge: Edge) -> List[Dict[str, Any]]:
         {
             "role": "user",
             "content": (
-                "Please process this claim through your team of specialists:"
-                f"from node: {edge.from_node.name}, "
-                f"to node: {edge.to_node.name}, "
-                f"transport_description: {edge.transport_description}, "
-                f"mode of Transportation: {edge.mode}, "
-                f"time of Transportation: {edge.time}, "
-                f"cost of Transportation: {edge.cost}, "
+                f"Please evaluate this transport edge:\n"
+                f"- From: {edge.from_node.name}\n"
+                f"- To: {edge.to_node.name}\n"
+                f"- Transport description: {edge.transport_description}\n"
+                f"- Mode of Transportation: {edge.mode}\n"
+                f"- Time of Transportation: {edge.time}\n"
+                f"- Cost of Transportation: {edge.cost}"
             ),
         }
     ]
@@ -331,6 +331,7 @@ def process_edge_with_supervisor(edge: Edge) -> List[Dict[str, Any]]:
 
         # logger.info("✅ Workflow completed in %d steps", step_count)
         return chunks
+
     except Exception as e:
         print("An error occurred during workflow processing:"
               f" {str(e)}")

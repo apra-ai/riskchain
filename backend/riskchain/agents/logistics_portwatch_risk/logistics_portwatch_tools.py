@@ -6,19 +6,20 @@ This tool retrieves daily port metrics from the IMF PortWatch dataset
 (https://portwatch.imf.org/datasets/959214444157458aad969389b3ebe1a0/api),
 including portcalls and import/export container volumes.
 """
-
+import traceback
 from typing import Dict, Any
 from datetime import datetime
 import requests
 from langchain_core.tools import tool
 from pydantic import ValidationError
-from supplychains.models import Risk, Node
+from supplychains.models import Risk, Node, Edge
+
 
 @tool
 def get_port_activity_data(
     country: str = None,
     portname: str = None,
-    maxresults: int = 10
+    maxresults: int = 30 # Last 30 days by default
 ) -> Dict[str, Any]:
     """
     Retrieve current daily port activity data from the PortWatch API.
@@ -99,6 +100,7 @@ def create_risk_entry_log(name: str,
                           risk_level: str,
                           risk_score: float = 0.0,
                           source: str = None,
+                          edge_id: int = None,
                           node_id: int = None
                           ) -> Dict[str, Any]:
     """
@@ -112,6 +114,7 @@ def create_risk_entry_log(name: str,
         risk_level: Risk severity ('low', 'medium', 'high').
         risk_score: Numeric score representing severity (0.0–1.0).
         source: String with Portname, Location and date.
+        edge_id: Edge ID to associate the risk with a specific edge.
         node_id: Node ID to associate the risk with a specific node.
 
     Returns:
@@ -137,10 +140,16 @@ def create_risk_entry_log(name: str,
         print(f"Name: {name[:255]}, Description: {description}, Risk Level: {risk_level.lower()}, "
               f"Risk Score: {risk_score}, Source: {source}, Node ID: {node_id}")
 
-        if node_id is not None:
+        if edge_id is not None:
+            edge = Edge.objects.get(id=edge_id)
+            edge.risks.add(risk)
+            edge.save()
+        elif node_id is not None:
             node = Node.objects.get(id=node_id)
             node.risks.add(risk)
             node.save()
+
+
 
         return {
             "status": "success",
