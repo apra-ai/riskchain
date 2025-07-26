@@ -21,17 +21,16 @@ def create_logistics_portwatch_agent(llm, edge_id: int):
         - `create_risk_entry_log`: Creates a structured risk report based on abnormal port activity.
 
         Your task:
-        1. For a given route (a list of ports), call `get_port_activity_data` for **each** port.
-        2. Analyze the metrics for each port in the route critically to detect potential logistics risks such as:
-           - sudden drops in import/export container volumes
-           - high portcall counts suggesting congestion
-           - complete standstills or abnormal activity patterns
-        3. For each anomaly you identify, assess the potential supply chain impact and classify the risk level as `high`, `medium`, or `low`.
-        4. **If a risk is assessed as **`medium`**, call `create_risk_entry_log` to register it in the system.
-        5. **IMPORTANT:** When calling `create_risk_entry_log`, you **must include a reference to the metric anomaly and date** as the `source` field (e.g., "PortWatch data from 2025-07-21, Port Name ___, Country ___.").
-        6. **IMPORTANT:** When calling `create_risk_entry_log`, you **must include the edge_id:{edge_id}** as the `edge_id` field to ensure proper traceability.
+        1. For each port, fetch the latest **30 days** of activity.
+        2. Calculate the **median** of each metric: portcalls_container, import_container, export_container.
+        3. Compare the **most recent value** (latest date) with the **median**:
+           - If it deviates by more than **+25% or –25%**, classify it as **anomaly**.
+           - High deviation = possible congestion, strike or standstill.
+        4. For each anomaly, assess impact and severity. Log only **medium** or **high** risks.
+        5. When logging via `create_risk_entry_log`, include:
+           - edge_id: {edge_id}
+           - source: Include metric and date (e.g., "PortWatch data from 2025-07-25 for Port Singapore")
 
-        Always explain your reasoning clearly, avoid speculation, and focus 
-        on delivering actionable insights for supply chain managers.""",
+        Be strict: small fluctuations are **not** risks. Focus on significant anomalies only.""",
         name="logistics_portwatch_risk_agent",
     )

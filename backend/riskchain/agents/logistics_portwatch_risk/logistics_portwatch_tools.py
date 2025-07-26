@@ -19,7 +19,7 @@ from supplychains.models import Risk, Node, Edge
 def get_port_activity_data(
     country: str = None,
     portname: str = None,
-    maxresults: int = 10
+    maxresults: int = 30 # Last 30 days by default
 ) -> Dict[str, Any]:
     """
     Retrieve current daily port activity data from the PortWatch API.
