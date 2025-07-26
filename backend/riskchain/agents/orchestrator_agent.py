@@ -17,6 +17,7 @@ from langgraph_supervisor import create_supervisor
 from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopolitical_risk_agent
 from agents.weather_natural_disaster_risk.weather_risk_agent import create_weather_risk_agent
 from agents.logistics_portwatch_risk.logistics_portwatch_agent import create_logistics_portwatch_agent
+from agents.traffic_risk.traffic_agent import create_traffic_delay_agent
 from supplychains.models import Node, Edge
 from langchain.schema import HumanMessage, AIMessage
 from langchain_core.messages import ToolMessage
@@ -103,12 +104,13 @@ Only report risks that are supported by reliable, real-time or verifiable data. 
     return supervisor
 
 
-def create_risk_supervisor_edge(logistics_portwatch_agent):
+def create_risk_supervisor_edge(logistics_portwatch_agent, traffic_delay_agent):
     """Create and compile the supervisor coordinating all risk analysis agents."""
 
     supervisor = create_supervisor(
         agents=[
             logistics_portwatch_agent,
+            traffic_delay_agent,
         ],
         model=LLM,
         prompt="""
@@ -177,14 +179,14 @@ def log_chunk_step(chunk: dict, step_count: int):
         if isinstance(message, HumanMessage):
             print("\n💬 Human Messages:")
             content = message.content
-            
+
             if content:
                 print("\n📨 Message:")
                 print(content)
         elif isinstance(message, ToolMessage):
             print("\n💬 Tool Messages:")
             content = message.content
-            
+
             if content:
                 print("\n📨 Message:")
                 print(content)
@@ -272,7 +274,7 @@ def process_node_with_supervisor(node: Node) -> List[Dict[str, Any]]:
         print("An error occurred during workflow processing:"
               f" {str(e)}")
         traceback.print_exc()
-        
+
         # logger.error("Error in workflow processing: %s", e, exc_info=True)
         raise
 
@@ -291,8 +293,9 @@ def process_edge_with_supervisor(edge: Edge) -> List[Dict[str, Any]]:
     # ---------------------------------------------------------------------------
 
     logistics_portwatch_agent = create_logistics_portwatch_agent(LLM,edge.id)
+    traffic_delay_agent = create_traffic_delay_agent(LLM, edge.id, edge.from_node.name, edge.to_node.name)
 
-    risk_supervisor = create_risk_supervisor_edge(logistics_portwatch_agent)
+    risk_supervisor = create_risk_supervisor_edge(logistics_portwatch_agent, traffic_delay_agent)
 
     # logger.info("")
     # logger.info("🚀 Starting supervisor-based claim processing…")
