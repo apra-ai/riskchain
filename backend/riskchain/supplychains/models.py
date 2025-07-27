@@ -89,11 +89,11 @@ class Risk(models.Model):
     def save(self, *args, **kwargs):
         no_similar_risks = check_risk_similarity(self.description)
         if no_similar_risks:
-            embedding_for_risk(self)
             super().save(*args, **kwargs)
+            embedding_for_risk(self)
             print(f"Name: {self.name[:255]}, Description: {self.description}, Risk Level: {self.risk_level.lower()}, Risk Score: {self.risk_score}, Url: {self.url}, Node ID: {self.node_id}")
         else:
-            print(f"Risk {self.name[:255]} is similar to an existing risk, not saving.")
+            print(f"Risk is similar to an existing risk, not saving.")
 
     def __str__(self):
         return self.name
