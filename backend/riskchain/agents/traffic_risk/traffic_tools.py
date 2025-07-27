@@ -1,62 +1,56 @@
 """
 Road Traffic Activity Tool – Daily Road Traffic API
-This tool retrieves real-time traffic metrics from the HERE dataset (here.com).
+This tool retrieves real-time traffic metrics from the TOMTOM dataset (https://www.tomtom.com/).
 """
-
-import traceback
-from typing import Dict, Any
+import os
 import requests
+import traceback
 from langchain_core.tools import tool
-from supplychains.models import Risk, Edge, Node
+from supplychains.models import Risk, Edge
 
-HERE_TRAFFIC_URL = "https://traffic.ls.hereapi.com/traffic/6.3/incidents.json"
-
-def build_here_traffic_url(lat: float, lon: float) -> str:
-    """Returns a clickable traffic map URL centered at given coordinates."""
-    return f"https://wego.here.com/traffic/explore?map={lat},{lon},11,traffic"
-
-def bbox_center(bbox: str) -> tuple[float, float]:
-    """Returns the center latitude and longitude of a bounding box."""
-    lat1, lon1, lat2, lon2 = map(float, bbox.replace(';', ',').split(','))
-    return (lat1 + lat2) / 2, (lon1 + lon2) / 2
-
+TOMTOM_TRAFFIC_URL = "https://api.tomtom.com/traffic/services/5/incidentDetails"
 
 @tool
-def get_traffic_delay_data(bbox: str, api_key: str, max_results: int = 50) -> Dict[str, Any]:
-    """Retrieve current traffic incident data from HERE API within a bounding box."""
+def get_traffic_delay_data(bbox: str, max_results: int = 50) -> dict:
+    """
+    Fetch traffic delays from TomTom Traffic API within a bounding box.
+
+    Args:
+        bbox: Bounding box string in format "minLat,minLon,maxLat,maxLon"
+        max_results: Max number of incidents to return
+
+    Returns:
+        Dictionary with traffic incidents
+    """
     try:
+        api_key = os.getenv("TOMTOM_API_KEY")
+        if not api_key:
+            raise ValueError("Missing TOMTOM_API_KEY")
+
         params = {
-            "apikey": api_key,
+            "key": api_key,
             "bbox": bbox,
-            "language": "en",
-            "maxresults": max_results
+            #"fields": "id,geometry,properties",
+            #"language": "en",
+            #"categoryFilter": "accident,roadClosure",
+            "maxResults": max_results
         }
-        response = requests.get(HERE_TRAFFIC_URL, params=params, timeout=10)
+
+        response = requests.get(TOMTOM_TRAFFIC_URL, params=params, timeout=10)
         response.raise_for_status()
-        data = response.json()
 
-        items = data.get("TRAFFICITEMS", {}).get("TRAFFICITEM", [])
-        results = []
-        center_lat, center_lon = bbox_center(bbox)
+        return {"results": response.json().get("incidents", [])}
 
-        for item in items:
-            incident_url = build_here_traffic_url(center_lat, center_lon)
-
-            results.append({
-                "type": item.get("TRAFFICITEMTYPEDESC", "unknown"),
-                "description": item.get("COMMENTS", {}).get("value", "no description"),
-                "criticality": item.get("CRITICALITY", {}).get("DESCRIPTION", "unknown"),
-                "start_time": item.get("STARTTIME"),
-                "end_time": item.get("ENDTIME"),
-                "source_url": incident_url
-            })
-
-        return {"results": results}
-
+    except requests.HTTPError as e:
+        return {
+            "error": f"HTTP error: {e}",
+            "status_code": response.status_code,
+            "response_text": response.text,
+            "params": params
+        }
     except Exception as e:
-        print(f"Traffic Tool Error: {str(e)}")
         traceback.print_exc()
-        return {"error": f"Failed to retrieve traffic data: {str(e)}"}
+        return {"error": f"Unhandled error: {str(e)}"}
 
 
 @tool
@@ -65,29 +59,29 @@ def create_risk_entry_log(name: str,
                           risk_level: str,
                           risk_score: float = 0.0,
                           source: str = None,
-                          edge_id: int = None,
-                          node_id: int = None
-                          ) -> Dict[str, Any]:
+                          lat: float = None,
+                          lon: float = None,
+                          edge_id: int = None) -> dict:
     """Create a new Risk entry in the database."""
     try:
+        source = source or (
+            f"https://plan.tomtom.com/en/?p={lat},{lon},10z" if lat and lon else None
+        )
+
         risk = Risk.objects.create(
             name=name[:255],
             description=description,
             risk_level=risk_level.lower(),
             risk_score=risk_score,
             source=source,
-            url="https://developer.here.com/products/traffic",
+            url="https://plan.tomtom.com/en/",
             risk_type=4
         )
 
-        if edge_id is not None:
+        if edge_id:
             edge = Edge.objects.get(id=edge_id)
             edge.risks.add(risk)
             edge.save()
-        elif node_id is not None:
-            node = Node.objects.get(id=node_id)
-            node.risks.add(risk)
-            node.save()
 
         return {
             "status": "success",
@@ -98,6 +92,5 @@ def create_risk_entry_log(name: str,
         }
 
     except Exception as e:
-        print(f"Error creating risk entry: {str(e)}")
         traceback.print_exc()
         return {"status": "error", "message": str(e)}

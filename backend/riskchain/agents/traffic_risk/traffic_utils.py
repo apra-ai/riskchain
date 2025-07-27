@@ -1,34 +1,28 @@
-"""
-Utility functions for traffic risk agent.
-"""
-
-import os
-import requests
+from geopy.geocoders import Nominatim
 
 
-def geocode_location(location: str) -> tuple[float, float]:
+def geocode_location(location: str) -> tuple:
     """
-    Converts a city/place name to (latitude, longitude) using HERE Geocoding API.
+    Returns (lat, lon) for a given location string.
     """
-    api_key = os.getenv("HERE_API_KEY")
-    url = "https://geocode.search.hereapi.com/v1/geocode"
-    params = {"q": location, "apiKey": api_key}
-    resp = requests.get(url, params=params)
-    resp.raise_for_status()
-    items = resp.json().get("items", [])
-    if not items:
-        raise ValueError(f"No geocoding result for: {location}")
-    pos = items[0]["position"]
-    return pos["lat"], pos["lng"]
+    geolocator = Nominatim(user_agent="traffic_agent_geocoder")
+    loc = geolocator.geocode(location)
+    if loc is None:
+        raise ValueError(f"Could not geocode location: {location}")
+    return (loc.latitude, loc.longitude)
 
-def build_bbox_from_points(p1: tuple[float, float], p2: tuple[float, float]) -> str:
+
+def build_bbox_from_points(start: tuple, end: tuple, margin: float = 0.2) -> str:
     """
-    Returns a bounding box string ("south,west;north,east") from two lat/lon points.
+    Build a bounding box with margin around two lat/lon points.
+    Returns a bbox string: minLat,minLon,maxLat,maxLon
     """
-    lat1, lon1 = p1
-    lat2, lon2 = p2
-    south = min(lat1, lat2)
-    north = max(lat1, lat2)
-    west = min(lon1, lon2)
-    east = max(lon1, lon2)
-    return f"{south},{west};{north},{east}"
+    lat1, lon1 = start
+    lat2, lon2 = end
+
+    min_lat = min(lat1, lat2) - margin
+    max_lat = max(lat1, lat2) + margin
+    min_lon = min(lon1, lon2) - margin
+    max_lon = max(lon1, lon2) + margin
+
+    return f"{min_lat},{min_lon},{max_lat},{max_lon}"
