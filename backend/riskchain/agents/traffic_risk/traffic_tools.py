@@ -1,7 +1,4 @@
-"""
-Road Traffic Activity Tool – Daily Road Traffic API
-This tool retrieves real-time traffic metrics from the TOMTOM dataset (https://www.tomtom.com/).
-"""
+"""Road Traffic Activity Tool – Daily Road Traffic API"""
 import os
 import requests
 import traceback
@@ -30,10 +27,9 @@ def get_traffic_delay_data(bbox: str, max_results: int = 50) -> dict:
         params = {
             "key": api_key,
             "bbox": bbox,
-            #"fields": "id,geometry,properties",
-            #"language": "en",
-            #"categoryFilter": "accident,roadClosure",
             "maxResults": max_results
+            # Optional: "categoryFilter": "accident,roadClosure",
+            # Optional: "fields": "id,geometry,properties",
         }
 
         response = requests.get(TOMTOM_TRAFFIC_URL, params=params, timeout=10)

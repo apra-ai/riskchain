@@ -1,28 +1,40 @@
+"""Utility functions for road traffic analysis."""
+from typing import Tuple
 from geopy.geocoders import Nominatim
 
 
-def geocode_location(location: str) -> tuple:
+def geocode_location(location: str) -> Tuple[float, float]:
     """
-    Returns (lat, lon) for a given location string.
+    Geocode a city/location string into latitude and longitude.
+
+    Args:
+        location: Location name (e.g., "Berlin")
+
+    Returns:
+        (lat, lon)
     """
-    geolocator = Nominatim(user_agent="traffic_agent_geocoder")
+    geolocator = Nominatim(user_agent="traffic_agent")
     loc = geolocator.geocode(location)
-    if loc is None:
-        raise ValueError(f"Could not geocode location: {location}")
+    if not loc:
+        raise ValueError(f"Location not found: {location}")
     return (loc.latitude, loc.longitude)
 
 
-def build_bbox_from_points(start: tuple, end: tuple, margin: float = 0.2) -> str:
+def build_fixed_bbox(start: Tuple[float, float], end: Tuple[float, float], margin: float = 0.2) -> str:
     """
-    Build a bounding box with margin around two lat/lon points.
-    Returns a bbox string: minLat,minLon,maxLat,maxLon
-    """
-    lat1, lon1 = start
-    lat2, lon2 = end
+    Build a bounding box around two coordinates, extended by a margin.
 
-    min_lat = min(lat1, lat2) - margin
-    max_lat = max(lat1, lat2) + margin
-    min_lon = min(lon1, lon2) - margin
-    max_lon = max(lon1, lon2) + margin
+    Args:
+        start: (lat, lon)
+        end: (lat, lon)
+        margin: Margin in degrees to extend around min/max coordinates
+
+    Returns:
+        Bbox string: "minLat,minLon,maxLat,maxLon"
+    """
+    min_lat = min(start[0], end[0]) - margin
+    max_lat = max(start[0], end[0]) + margin
+    min_lon = min(start[1], end[1]) - margin
+    max_lon = max(start[1], end[1]) + margin
 
     return f"{min_lat},{min_lon},{max_lat},{max_lon}"
