@@ -28,8 +28,6 @@ def get_traffic_delay_data(bbox: str, max_results: int = 50) -> dict:
             "key": api_key,
             "bbox": bbox,
             "maxResults": max_results
-            # Optional: "categoryFilter": "accident,roadClosure",
-            # Optional: "fields": "id,geometry,properties",
         }
 
         response = requests.get(TOMTOM_TRAFFIC_URL, params=params, timeout=10)

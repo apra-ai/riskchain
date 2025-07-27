@@ -1,5 +1,4 @@
 """Road Traffic Agent Factory"""
-import os
 from dotenv import load_dotenv
 from langgraph.prebuilt import create_react_agent
 from .traffic_utils import geocode_location, build_fixed_bbox
