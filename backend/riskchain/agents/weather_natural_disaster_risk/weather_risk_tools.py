@@ -205,6 +205,8 @@ def get_disasters_near_location(location_name: str, radius_km: float = 500, node
                     url=link,
                     risk_type=3  # Environmental / Natural Disaster
                 )
+                if risk.id is None:
+                    return {"message": f"Risk: {event_type} near {location_name} is too similar to an existing one, not created."}
                 print(f"Risk created: {risk.name}, Level: {risk_level}, Score: {risk_score}")
                 if node_id is not None:
                     node = Node.objects.get(id=node_id)
