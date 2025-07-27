@@ -136,6 +136,10 @@ def create_risk_entry_log(name: str,
             url="https://portwatch.imf.org/pages/port-monitor",
             risk_type=2
         )
+
+        if risk.id is None:
+            return {"message": f"Risk: {description} is too similar to an existing one, not created."}
+
         print("Risk created successfully:")
         print(f"Name: {name[:255]}, Description: {description}, Risk Level: {risk_level.lower()}, "
               f"Risk Score: {risk_score}, Source: {source}, Node ID: {node_id}")

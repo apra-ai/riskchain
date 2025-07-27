@@ -60,7 +60,8 @@ def get_geopolitical_risks(query: str, sourcelang: str = "en", maxrecords: int =
 
     except Exception as e:
         print(f"GDELT API error: {str(e)}")
-        return {"error": f"Failed to retrieve geopolitical risks: {str(e)}"}
+        traceback.print_exc()
+        return {"error": f"Failed to retrieve geopolitical risks: {str(e)}, response: {response.text if 'response' in locals() else 'No response available'}"}
 
 @tool
 def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_score: float = 0.0, url: str = None, node_id: int = None) -> Dict[str, Any]:
@@ -94,8 +95,9 @@ def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_sco
             source="GDELT API",
             risk_type=0
         )
-        print("Risk created successfully:")
-        print(f"Name: {name[:255]}, Description: {description}, Risk Level: {risk_level.lower()}, Risk Score: {risk_score}, Url: {url}, Node ID: {node_id}")
+
+        if risk.id is None:
+            return {"message": "Risk is too similar to an existing one, not created."}
 
         if node_id is not None:
             node = Node.objects.get(id=node_id)
@@ -112,4 +114,5 @@ def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_sco
 
     except Exception as e:
         print(f"Error creating risk entry: {str(e)}")
+        traceback.print_exc()
         return {"status": "error", "message": str(e)}
