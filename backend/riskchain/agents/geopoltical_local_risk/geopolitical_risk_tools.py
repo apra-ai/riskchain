@@ -94,8 +94,6 @@ def create_risk_entry_geo(name: str, description: str, risk_level: str, risk_sco
             source="GDELT API",
             risk_type=0
         )
-        print("Risk created successfully:")
-        print(f"Name: {name[:255]}, Description: {description}, Risk Level: {risk_level.lower()}, Risk Score: {risk_score}, Url: {url}, Node ID: {node_id}")
 
         if node_id is not None:
             node = Node.objects.get(id=node_id)
