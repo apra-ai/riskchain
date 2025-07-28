@@ -17,7 +17,7 @@ class SupplyChainAPITests(APITestCase):
         node = Node.objects.create(name="Node1", type="Type1", description="Description", status="active")
 
         client = QdrantClient(path="qdrant.db")
-        create_collectionfrom(client)
+        create_collection(client)
         # Erstelle einen Risk
         risk = Risk.objects.create(name="Risk1", description="Risk Description", risk_level="high", risk_score=0.8)
         if risk.id is not None:
