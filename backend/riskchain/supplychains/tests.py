@@ -3,7 +3,9 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
+from qdrant_client import QdrantClient
 from supplychains.models import SupplyChain, Node, Edge, Risk
+from supplychains.functionality import create_collectionfrom
 
 class SupplyChainAPITests(APITestCase):
 
@@ -13,7 +15,9 @@ class SupplyChainAPITests(APITestCase):
         """
         # Erstelle eine Node
         node = Node.objects.create(name="Node1", type="Type1", description="Description", status="active")
-        
+
+        client = QdrantClient(path="qdrant.db")
+        create_collectionfrom(client)
         # Erstelle einen Risk
         risk = Risk.objects.create(name="Risk1", description="Risk Description", risk_level="high", risk_score=0.8)
         if risk.id is not None:
