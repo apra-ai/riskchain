@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from qdrant_client import QdrantClient
 from supplychains.models import SupplyChain, Node, Edge, Risk
-from supplychains.functionality import create_collectionfrom
+from supplychains.functionality import create_collection
 
 class SupplyChainAPITests(APITestCase):
 
