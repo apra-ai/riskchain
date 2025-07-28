@@ -12,6 +12,8 @@ class Risk(models.Model):
         (1, 'Environmental Risk'),
         (2, 'Logistics Risk'),
         (3, 'Weather Risk'),
+        (4, 'Traffic Risk'),
+        (5, 'Airport Risk')
     ]
     name = models.CharField(max_length=255)
     description = models.TextField()

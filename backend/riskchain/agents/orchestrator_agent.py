@@ -18,6 +18,7 @@ from agents.geopoltical_local_risk.geopolitical_risk_agent import create_geopoli
 from agents.weather_natural_disaster_risk.weather_risk_agent import create_weather_risk_agent
 from agents.logistics_portwatch_risk.logistics_portwatch_agent import create_logistics_portwatch_agent
 from agents.traffic_risk.traffic_agent import create_traffic_delay_agent
+from agents.airport_risk.airport_agent import create_airport_risk_agent
 from supplychains.models import Node, Edge
 from langchain.schema import HumanMessage, AIMessage
 from langchain_core.messages import ToolMessage
@@ -104,13 +105,14 @@ Only report risks that are supported by reliable, real-time or verifiable data. 
     return supervisor
 
 
-def create_risk_supervisor_edge(logistics_portwatch_agent, traffic_delay_agent):
+def create_risk_supervisor_edge(logistics_portwatch_agent, traffic_delay_agent, airport_risk_agent):
     """Create and compile the supervisor coordinating all risk analysis agents."""
 
     supervisor = create_supervisor(
         agents=[
             logistics_portwatch_agent,
             traffic_delay_agent,
+            airport_risk_agent
         ],
         model=LLM,
         prompt="""
@@ -294,8 +296,9 @@ def process_edge_with_supervisor(edge: Edge) -> List[Dict[str, Any]]:
 
     logistics_portwatch_agent = create_logistics_portwatch_agent(LLM,edge.id)
     traffic_delay_agent = create_traffic_delay_agent(LLM, edge.id, edge.from_node.name, edge.to_node.name)
+    airport_risk_agent = create_airport_risk_agent(LLM, edge.id, edge.from_node.name, edge.to_node.name)
 
-    risk_supervisor = create_risk_supervisor_edge(logistics_portwatch_agent, traffic_delay_agent)
+    risk_supervisor = create_risk_supervisor_edge(logistics_portwatch_agent, traffic_delay_agent, airport_risk_agent)
 
     # logger.info("")
     # logger.info("🚀 Starting supervisor-based claim processing…")

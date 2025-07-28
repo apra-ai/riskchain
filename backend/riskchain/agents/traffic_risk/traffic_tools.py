@@ -48,14 +48,14 @@ def get_traffic_delay_data(bbox: str, max_results: int = 50) -> dict:
 
 
 @tool
-def create_risk_entry_log(name: str,
-                          description: str,
-                          risk_level: str,
-                          risk_score: float = 0.0,
-                          source: str = None,
-                          lat: float = None,
-                          lon: float = None,
-                          edge_id: int = None) -> dict:
+def create_risk_entry_traf(name: str,
+                           description: str,
+                           risk_level: str,
+                           risk_score: float = 0.0,
+                           source: str = None,
+                           lat: float = None,
+                           lon: float = None,
+                           edge_id: int = None) -> dict:
     """Create a new Risk entry in the database."""
     try:
         source = source or (

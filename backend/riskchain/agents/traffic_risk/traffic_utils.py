@@ -13,7 +13,7 @@ def geocode_location(location: str) -> Tuple[float, float]:
     Returns:
         (lat, lon)
     """
-    geolocator = Nominatim(user_agent="traffic_agent")
+    geolocator = Nominatim(user_agent="riskchain_agent", timeout=10)
     loc = geolocator.geocode(location)
     if not loc:
         raise ValueError(f"Location not found: {location}")
