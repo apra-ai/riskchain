@@ -1,6 +1,6 @@
 # myapp/urls.py
 from django.urls import path
-from .views import SupplyChainDetail, SupplyChainsView, NodeDetail, NodesView, EdgeDetail, EdgesView
+from .views import SupplyChainDetail, SupplyChainsView, NodeDetail, NodesView, EdgeDetail, EdgesView, RiskDetail, RisksView
 
 urlpatterns = [
     # Path for retrieving a specific supply chain by its ID
@@ -10,4 +10,6 @@ urlpatterns = [
     path('node', NodesView.as_view(), name='nodes'),
     path('edge/<int:pk>/', EdgeDetail.as_view(), name='edge-detail'),
     path('edge', EdgesView.as_view(), name='edges'),
+    path('risk/<int:pk>/', RiskDetail.as_view(), name='risk-detail'),
+    path('risk', RisksView.as_view(), name='risks'),
 ]

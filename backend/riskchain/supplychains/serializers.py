@@ -1,6 +1,13 @@
 # myapp/serializers.py
 from rest_framework import serializers
-from .models import SupplyChain, Node, Edge
+from .models import SupplyChain, Node, Edge, Risk
+
+class RiskSerializer(serializers.ModelSerializer):
+    risk_type_display = serializers.CharField(source='get_risk_type_display', read_only=True)
+
+    class Meta:
+        model = Risk
+        fields = ('id', 'name', 'description', 'risk_level', 'risk_score', 'url', 'source', 'risk_type', 'risk_type_display')
 
 class NodeSerializer(serializers.ModelSerializer):
 

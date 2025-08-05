@@ -2,8 +2,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import SupplyChain, Node, Edge
-from .serializers import SupplyChainSerializer, NodeSerializer, EdgeSerializer
+from .models import SupplyChain, Node, Edge, Risk
+from .serializers import SupplyChainSerializer, NodeSerializer, EdgeSerializer, RiskSerializer
 
 class SupplyChainDetail(APIView):
     def get(self, request, pk, format=None):
@@ -56,6 +56,24 @@ class EdgesView(APIView):
         try:
             edges = Edge.objects.all()
             serializer = EdgeSerializer(edges, many=True)
+            return Response(serializer.data)
+        except:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class RiskDetail(APIView):
+    def get(self, request, pk, format=None):
+        try:
+            risk = Risk.objects.get(pk=pk)
+            serializer = RiskSerializer(risk)
+            return Response(serializer.data)
+        except:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class RisksView(APIView):
+    def get(self, request, format=None):
+        try:
+            risks = Risk.objects.all()
+            serializer = RiskSerializer(risks, many=True)
             return Response(serializer.data)
         except:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
