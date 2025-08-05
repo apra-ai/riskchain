@@ -1,9 +1,13 @@
 # myapp/urls.py
 from django.urls import path
-from .views import SupplyChainDetail, SupplyChains
+from .views import SupplyChainDetail, SupplyChainsView, NodeDetail, NodesView, EdgeDetail, EdgesView
 
 urlpatterns = [
     # Path for retrieving a specific supply chain by its ID
     path('supplychain/<int:pk>/', SupplyChainDetail.as_view(), name='supplychain-detail'),
-    path('supplychain', SupplyChains.as_view(), name='supplychains'),
+    path('supplychain', SupplyChainsView.as_view(), name='supplychains'),
+    path('node/<int:pk>/', NodeDetail.as_view(), name='node-detail'),
+    path('node', NodesView.as_view(), name='nodes'),
+    path('edge/<int:pk>/', EdgeDetail.as_view(), name='edge-detail'),
+    path('edge', EdgesView.as_view(), name='edges'),
 ]

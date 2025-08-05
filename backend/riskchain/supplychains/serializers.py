@@ -3,7 +3,6 @@ from rest_framework import serializers
 from .models import SupplyChain, Node, Edge
 
 class NodeSerializer(serializers.ModelSerializer):
-    risks = serializers.StringRelatedField(many=True)
 
     class Meta:
         model = Node
@@ -11,8 +10,6 @@ class NodeSerializer(serializers.ModelSerializer):
 
 
 class EdgeSerializer(serializers.ModelSerializer):
-    from_node = serializers.StringRelatedField()
-    to_node = serializers.StringRelatedField()
     risks = serializers.StringRelatedField(many=True)
 
     class Meta:
@@ -30,8 +27,6 @@ class EdgeSerializer(serializers.ModelSerializer):
         )
 
 class SupplyChainSerializer(serializers.ModelSerializer):
-    nodes = NodeSerializer(many=True, read_only=True)
-    edges = EdgeSerializer(many=True, read_only=True)
     total_risk = serializers.FloatField(read_only=True)
     risk_level = serializers.CharField(read_only=True)
 
