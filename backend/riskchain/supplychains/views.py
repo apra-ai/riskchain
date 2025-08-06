@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import SupplyChain, Node, Edge, Risk
 from .serializers import SupplyChainSerializer, NodeSerializer, EdgeSerializer, RiskSerializer
+from agents.orchestrator_agent import process_node_with_supervisor, process_edge_with_supervisor
 
 class SupplyChainDetail(APIView):
     def get(self, request, pk, format=None):
@@ -77,3 +78,22 @@ class RisksView(APIView):
             return Response(serializer.data)
         except:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class UpdateRisksSupplychain(APIView):
+    def post(self, request, format=None):
+        data = request.data
+        supplychain_id = data.get('supply_chain_id')
+        if not supplychain_id:
+            return Response({"detail": "Supply chain ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        supplychain = SupplyChain.objects.filter(id=supplychain_id).first()
+        if not supplychain:
+            return Response({"detail": "Supply chain not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        for node in supplychain.nodes.all():
+            process_node_with_supervisor(node)
+
+        for edge in supplychain.edges.all():
+            process_edge_with_supervisor(edge)
+
+        return Response({"detail": f"Risk for supplychain {supplychain_id} updated."})
