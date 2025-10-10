@@ -5,6 +5,8 @@ from .config import SIMILARITY_THRESHHOLD, MODEL_NAME, MODEL_KWARGS, ENCODE_KWAR
 from langchain_huggingface import HuggingFaceEmbeddings
 from qdrant_client import QdrantClient
 from langchain_qdrant import QdrantVectorStore
+from smart_selects.db_fields import ChainedForeignKey
+from .data_structure import NODE_ROLE_CHOICES, OWNERSHIP_CHOICES, CAPACITY_CLASS_CHOICES, TRANSPORT_MODES_CHOICES
 
 def embedding_for_risk(risk):
     """
@@ -35,6 +37,22 @@ def embedding_for_risk(risk):
     
     print(f"embedding for risk {risk.id} done")
 
+class Country(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class City(models.Model):
+    name = models.CharField(max_length=100)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="cities")
+
+    class Meta:
+        unique_together = ('name', 'country')
+
+    def __str__(self):
+        return f"{self.name} ({self.country.name})"
 
 def check_risk_similarity(text):
     """
@@ -99,15 +117,45 @@ class Risk(models.Model):
         return self.name
 
 class Node(models.Model):
-    name = models.CharField(max_length=255)  
-    type = models.CharField(max_length=255)  
-    description = models.TextField()  
-    status = models.CharField(max_length=50, choices=[('completed', 'Completed'), ('active', 'Active'), ('pending', 'Pending')])  
+    country = models.ForeignKey(Country, on_delete=models.PROTECT)
+    city = ChainedForeignKey(
+        City,
+        chained_field="country",
+        chained_model_field="country",
+        show_all=False,
+        auto_choose=True,
+        sort=True,
+        on_delete=models.PROTECT
+    )
+    
+    node_role = models.CharField(
+        max_length=30,
+        choices=NODE_ROLE_CHOICES,
+        default="SUPPLIER"
+    )
 
-    risks = models.ManyToManyField(Risk, related_name='nodes')
+    ownership = models.CharField(
+        max_length=30,
+        choices=OWNERSHIP_CHOICES,
+        default="SUPPLIER"
+    )
+
+    capacity_class = models.CharField(
+        max_length=30,
+        choices=CAPACITY_CLASS_CHOICES,
+        default="SUPPLIER"
+    )
+
+    transport_modes = models.CharField(
+        max_length=30,
+        choices=TRANSPORT_MODES_CHOICES,
+        default="SUPPLIER"
+    )
 
     def __str__(self):
-        return self.name
+        return f"{self.country}({self.city}), {self.transport_modes}"
+
+
 
 class Edge(models.Model):
     from_node = models.ForeignKey(Node, related_name='outgoing_edges', on_delete=models.CASCADE)  

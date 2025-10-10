@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'supplychains',
     'rest_framework',
+    'smart_selects',
 ]
 
 MIDDLEWARE = [

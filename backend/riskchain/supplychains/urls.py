@@ -1,5 +1,5 @@
 # myapp/urls.py
-from django.urls import path
+from django.urls import path, include
 from .views import SupplyChainDetail, SupplyChainsView, NodeDetail, NodesView, EdgeDetail, EdgesView, RiskDetail, RisksView, UpdateRisksSupplychain
 
 urlpatterns = [
@@ -13,4 +13,5 @@ urlpatterns = [
     path('risk/<int:pk>/', RiskDetail.as_view(), name='risk-detail'),
     path('risk', RisksView.as_view(), name='risks'),
     path('generaterisks', UpdateRisksSupplychain.as_view(), name='generate-risks'),
+    path('chaining/', include('smart_selects.urls')),
 ]
