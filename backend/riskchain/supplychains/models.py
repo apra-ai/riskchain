@@ -152,6 +152,8 @@ class Node(models.Model):
         default="SUPPLIER"
     )
 
+    risks = models.ManyToManyField(Risk, related_name='nodes')
+
     def __str__(self):
         return f"{self.country}({self.city}), {self.transport_modes}"
 
