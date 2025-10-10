@@ -33,6 +33,29 @@ TRANSPORT_MODES_CHOICES = [
     ("INLAND_WATERWAY", "Inland Waterway"),
 ]
 
+#edge
+CROSSES_BORDER = [
+    ("YES", "Yes"),
+    ("NO", "No"),
+]
+
+COST_CLASS = [
+    ("LOW", "Low"),
+    ("MEDIUM", "Medium"),
+    ("HIGH", "High"),   
+]
+
+RELIABILITY_CLASS = [
+    ("LOW", "Low"),
+    ("MEDIUM", "Medium"),
+    ("HIGH", "High"),
+]
+
+DISTANCE_CLASS = [
+    ("SHORT", "Short"),
+    ("MEDIUM", "Medium"),
+    ("LONG", "Long"),
+]
 
 
 

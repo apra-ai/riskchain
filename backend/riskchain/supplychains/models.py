@@ -6,7 +6,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from qdrant_client import QdrantClient
 from langchain_qdrant import QdrantVectorStore
 from smart_selects.db_fields import ChainedForeignKey
-from .data_structure import NODE_ROLE_CHOICES, OWNERSHIP_CHOICES, CAPACITY_CLASS_CHOICES, TRANSPORT_MODES_CHOICES
+from .data_structure import NODE_ROLE_CHOICES, OWNERSHIP_CHOICES, CAPACITY_CLASS_CHOICES, TRANSPORT_MODES_CHOICES, CROSSES_BORDER, COST_CLASS, RELIABILITY_CLASS, DISTANCE_CLASS
 
 def embedding_for_risk(risk):
     """
@@ -152,7 +152,7 @@ class Node(models.Model):
         default="SUPPLIER"
     )
 
-    risks = models.ManyToManyField(Risk, related_name='nodes')
+    risks = models.ManyToManyField(Risk, related_name='nodes', blank=True)
 
     def __str__(self):
         return f"{self.country}({self.city}), {self.transport_modes}"
@@ -162,17 +162,44 @@ class Node(models.Model):
 class Edge(models.Model):
     from_node = models.ForeignKey(Node, related_name='outgoing_edges', on_delete=models.CASCADE)  
     to_node = models.ForeignKey(Node, related_name='incoming_edges', on_delete=models.CASCADE)  
-    transport_description = models.CharField(max_length=255)  
-    mode = models.CharField(max_length=255)  # e.g. Shipping or Truck
-    time = models.CharField(max_length=255)  
-    cost = models.FloatField()  
-    status = models.CharField(max_length=50, choices=[('completed', 'Completed'), ('active', 'Active'), ('pending', 'Pending')])  
 
+    CROSSES_BORDER, COST_CLASS, RELIABILITY_CLASS, DISTANCE_CLASS
+
+    crosses_border = models.CharField(
+        max_length=30,
+        choices=CROSSES_BORDER,
+        default="SUPPLIER"
+    )
+
+    transport_modes = models.CharField(
+        max_length=30,
+        choices=TRANSPORT_MODES_CHOICES,
+        default="SUPPLIER"
+    )
+
+    cost = models.CharField(
+        max_length=30,
+        choices=COST_CLASS,
+        default="SUPPLIER"
+    )
+
+    reliability = models.CharField(
+        max_length=30,
+        choices=RELIABILITY_CLASS,
+        default="SUPPLIER"
+    )
+
+    distance = models.CharField(
+        max_length=30,
+        choices=DISTANCE_CLASS,
+        default="SUPPLIER"
+    )
+    
     # Many-to-many relationship with the Risk model
-    risks = models.ManyToManyField(Risk, related_name='edges')
+    risks = models.ManyToManyField(Risk, related_name='edges', blank=True)
 
     def __str__(self):
-        return f"{self.from_node.name} -> {self.to_node.name} ({self.transport_description})"
+        return f"({self.from_node}) -> ({self.to_node}), ({self.transport_modes})"
 
 class SupplyChain(models.Model):
     name = models.CharField(max_length=255)
