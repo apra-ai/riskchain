@@ -127,7 +127,7 @@ class Node(models.Model):
         sort=True,
         on_delete=models.PROTECT
     )
-    
+
     node_role = models.CharField(
         max_length=30,
         choices=NODE_ROLE_CHOICES,
@@ -163,8 +163,6 @@ class Edge(models.Model):
     from_node = models.ForeignKey(Node, related_name='outgoing_edges', on_delete=models.CASCADE)  
     to_node = models.ForeignKey(Node, related_name='incoming_edges', on_delete=models.CASCADE)  
 
-    CROSSES_BORDER, COST_CLASS, RELIABILITY_CLASS, DISTANCE_CLASS
-
     crosses_border = models.CharField(
         max_length=30,
         choices=CROSSES_BORDER,
@@ -194,47 +192,82 @@ class Edge(models.Model):
         choices=DISTANCE_CLASS,
         default="SUPPLIER"
     )
-    
+
     # Many-to-many relationship with the Risk model
     risks = models.ManyToManyField(Risk, related_name='edges', blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(from_node=models.F("to_node")),
+                name="edge_no_self_loop",
+            )
+        ]
 
     def __str__(self):
         return f"({self.from_node}) -> ({self.to_node}), ({self.transport_modes})"
 
+
 class SupplyChain(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=120)
     description = models.TextField()
-    nodes = models.ManyToManyField(Node, related_name='supply_chains')
-    edges = models.ManyToManyField(Edge, related_name='supply_chains')
-    last_updated = models.DateTimeField(auto_now=True)
-
-    @property
-    def total_risk(self):
-        risk_scores = []
-
-        for node in self.nodes.all():
-            for risk in node.risks.all():
-                score = risk.risk_score
-                risk_scores.append(score)
-        for edge in self.edges.all():
-            for risk in edge.risks.all():
-                score = risk.risk_score
-                risk_scores.append(score)
-
-        if not risk_scores:
-            return 0.0
-        
-        return round(sum(risk_scores) / len(risk_scores), 2)
-
-    @property
-    def risk_level(self):
-        score = self.total_risk
-        if score >= 0.7:
-            return "High"
-        elif score >= 0.4:
-            return "Medium"
-        else:
-            return "Low"
 
     def __str__(self):
-        return self.name
+        return f"{self.name}"
+
+    def steps_ordered(self):
+        # korrektes Vorladen über die Edge → from_node/to_node + Länder
+        return (
+            self.steps
+            .select_related(
+                "edge__from_node__country",
+                "edge__to_node__country",
+            )
+            .order_by("position")
+        )
+
+    # optional, aber empfohlen: Konsistenzprüfung der Kette
+    def clean(self):
+        # Beim Anlegen (ohne PK) KEINE Steps prüfen
+        if not self.pk:
+            return
+
+        steps = list(self.steps_ordered())
+        if not steps:
+            return
+
+        if steps[0].position != 1:
+            raise ValidationError("Die Kette muss bei Position 1 beginnen.")
+        for i in range(len(steps) - 1):
+            if steps[i+1].position != steps[i].position + 1:
+                raise ValidationError("Positionen müssen fortlaufend sein (1..N).")
+        for a, b in zip(steps, steps[1:]):
+            if a.edge.to_node_id != b.edge.from_node_id:
+                raise ValidationError(
+                    f"Übergang ungültig: Step {a.position} endet bei "
+                    f"{a.edge.to_node.city} – Step {b.position} startet bei "
+                    f"{b.edge.from_node.city}."
+                )
+
+class ChainStep(models.Model):
+    chain = models.ForeignKey(
+        SupplyChain, on_delete=models.CASCADE, related_name="steps"
+    )
+    position = models.PositiveIntegerField()  # 1,2,3,…
+    edge = models.ForeignKey("Edge", on_delete=models.PROTECT, related_name="chain_steps")
+
+    class Meta:
+        ordering = ["position"]
+        constraints = [
+            # Position muss je Kette eindeutig sein
+            models.UniqueConstraint(
+                fields=["chain", "position"], name="uniq_chain_position"
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.chain} | {self.position}: {self.edge.from_node} → {self.edge.to_node}"
