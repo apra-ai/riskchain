@@ -25,14 +25,6 @@ CAPACITY_CLASS_CHOICES = [
     ("HIGH", "High"),
 ]
 
-TRANSPORT_MODES_CHOICES = [
-    ("ROAD", "Road"),
-    ("RAIL", "Rail"),
-    ("AIR", "Air"),
-    ("SEA", "Sea"),
-    ("INLAND_WATERWAY", "Inland Waterway"),
-]
-
 #edge
 CROSSES_BORDER = [
     ("YES", "Yes"),
@@ -55,4 +47,12 @@ DISTANCE_CLASS = [
     ("SHORT", "Short"),
     ("MEDIUM", "Medium"),
     ("LONG", "Long"),
+]
+
+TRANSPORT_MODES_CHOICES = [
+    ("ROAD", "Road"),
+    ("RAIL", "Rail"),
+    ("AIR", "Air"),
+    ("SEA", "Sea"),
+    ("INLAND_WATERWAY", "Inland Waterway"),
 ]

@@ -88,6 +88,7 @@ class NodeAdmin(admin.ModelAdmin):
     list_display = ("country", "city", "node_role", "ownership", "capacity_class")
     list_filter = ("country", "node_role", "ownership", "capacity_class")
     search_fields = ("city__name", "country__name")
+    filter_horizontal = ("risks",)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "city" and request.POST.get("country"):
