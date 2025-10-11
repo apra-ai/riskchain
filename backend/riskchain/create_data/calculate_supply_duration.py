@@ -3,61 +3,61 @@ import random
 
 # Node-bezogene choices
 NODE_ROLE_CHOICES_VALUES = {
-    "SUPPLIER": 1,
-    "MANUFACTURER": 1,
+    "SUPPLIER": 2,
+    "MANUFACTURER": 3,
     "PLANT": 1,
-    "WAREHOUSE": 1,
+    "WAREHOUSE": 2,
     "DISTRIBUTION_CENTER": 1,
-    "PORT": 1,
+    "PORT": 2,
     "AIRPORT": 1,
-    "CROSSDOCK": 1,
-    "CUSTOMER": 1,
+    "CROSSDOCK": 4,
+    "CUSTOMER": 6,
 }
 
 OWNERSHIP_CHOICES_VALUES = {
     "INTERNAL": 1,
-    "3PL": 1,
-    "SUPPLIER_OWNED": 1,
-    "JV": 1,
-    "GOVERNMENT": 1,
+    "3PL": 4,
+    "SUPPLIER_OWNED": 2,
+    "JV": 2,
+    "GOVERNMENT": 7,
 }
 
 CAPACITY_CLASS_CHOICES_VALUES = {
     "LOW": 1,
-    "MEDIUM": 1,
-    "HIGH": 1,
+    "MEDIUM": 3,
+    "HIGH": 6,
 }
 
 # Edge-bezogene choices
 CROSSES_BORDER_VALUES = {
-    "YES": 1,
+    "YES": 5,
     "NO": 1,
 }
 
 COST_CLASS_VALUES = {
-    "LOW": 1,
+    "LOW": 3,
     "MEDIUM": 1,
-    "HIGH": 1,
+    "HIGH": 2,
 }
 
 RELIABILITY_CLASS_VALUES = {
-    "LOW": 1,
-    "MEDIUM": 1,
+    "LOW": 5,
+    "MEDIUM": 3,
     "HIGH": 1,
 }
 
 DISTANCE_CLASS_VALUES = {
     "SHORT": 1,
-    "MEDIUM": 1,
-    "LONG": 1,
+    "MEDIUM": 3,
+    "LONG": 5,
 }
 
 TRANSPORT_MODES_CHOICES_VALUES = {
-    "ROAD": 1,
-    "RAIL": 1,
+    "ROAD": 5,
+    "RAIL": 3,
     "AIR": 1,
-    "SEA": 1,
-    "INLAND_WATERWAY": 1,
+    "SEA": 8,
+    "INLAND_WATERWAY": 6,
 }
 
 for node in Node.objects.all():
