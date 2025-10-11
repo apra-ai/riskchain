@@ -95,8 +95,6 @@ class Risk(models.Model):
     ]
     name = models.CharField(max_length=255)
     description = models.TextField()
-    risk_level = models.CharField(max_length=50, choices=[('high', 'High'), ('medium', 'Medium'), ('low', 'Low')])
-    risk_score = models.FloatField(default=0.0)
     url = models.URLField(blank=True, null=True, validators=[validate_https])
     source = models.CharField(blank=True, null=True)
     risk_type = models.IntegerField(

@@ -132,6 +132,6 @@ class CityAdmin(admin.ModelAdmin):
 # -----------------------------
 @admin.register(Risk)
 class RiskAdmin(admin.ModelAdmin):
-    list_display = ("name", "risk_level", "risk_type", "risk_score")
-    list_filter = ("risk_level", "risk_type")
+    list_display = ("name","risk_type")
+    list_filter = ("risk_type",)
     search_fields = ("name", "description")
