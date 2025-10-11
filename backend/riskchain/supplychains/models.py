@@ -146,12 +146,6 @@ class Node(models.Model):
         default="SUPPLIER"
     )
 
-    transport_modes = models.CharField(
-        max_length=30,
-        choices=TRANSPORT_MODES_CHOICES,
-        default="SUPPLIER"
-    )
-
     risks = models.ManyToManyField(Risk, related_name='nodes', blank=True)
 
     def __str__(self):
@@ -211,6 +205,7 @@ class Edge(models.Model):
 class SupplyChain(models.Model):
     name = models.CharField(max_length=120)
     description = models.TextField()
+    supply_duration_days = models.PositiveIntegerField()
 
     def __str__(self):
         return f"{self.name}"

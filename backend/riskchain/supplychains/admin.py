@@ -85,8 +85,8 @@ class EdgeAdmin(admin.ModelAdmin):
 # -----------------------------
 @admin.register(Node)
 class NodeAdmin(admin.ModelAdmin):
-    list_display = ("country", "city", "node_role", "ownership", "capacity_class", "transport_modes")
-    list_filter = ("country", "node_role", "ownership", "capacity_class", "transport_modes")
+    list_display = ("country", "city", "node_role", "ownership", "capacity_class")
+    list_filter = ("country", "node_role", "ownership", "capacity_class")
     search_fields = ("city__name", "country__name")
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):

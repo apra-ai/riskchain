@@ -52,3 +52,5 @@ for country in countries_cities:
         city_obj, created_city = City.objects.get_or_create(name=city, country=country_obj)
         if not created_city:
             print(f"Didnt create city {city} in country {country}")
+
+# 72 Cities in 13 countries created.
