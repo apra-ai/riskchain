@@ -118,6 +118,7 @@ class Risk(models.Model):
 
 class Node(models.Model):
     country = models.ForeignKey(Country, on_delete=models.PROTECT)
+    delay_score = models.FloatField(default=1.0, editable=False)
     city = ChainedForeignKey(
         City,
         chained_field="country",
@@ -155,7 +156,8 @@ class Node(models.Model):
 
 class Edge(models.Model):
     from_node = models.ForeignKey(Node, related_name='outgoing_edges', on_delete=models.CASCADE)  
-    to_node = models.ForeignKey(Node, related_name='incoming_edges', on_delete=models.CASCADE)  
+    to_node = models.ForeignKey(Node, related_name='incoming_edges', on_delete=models.CASCADE)
+    delay_score = models.FloatField(default=1.0, editable=False)
 
     crosses_border = models.CharField(
         max_length=30,
@@ -205,10 +207,15 @@ class Edge(models.Model):
 class SupplyChain(models.Model):
     name = models.CharField(max_length=120)
     description = models.TextField()
-    supply_duration_days = models.PositiveIntegerField()
 
     def __str__(self):
         return f"{self.name}"
+
+    def get_delay_score(self):
+        supply_duration_days = 0
+        for step in self.steps.all():
+            supply_duration_days += step.edge.delay_score
+        return supply_duration_days
 
     def steps_ordered(self):
         # korrektes Vorladen über die Edge → from_node/to_node + Länder

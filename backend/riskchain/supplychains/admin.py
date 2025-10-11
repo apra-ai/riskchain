@@ -55,13 +55,25 @@ class ChainStepInline(admin.TabularInline):
 # -----------------------------
 @admin.register(SupplyChain)
 class SupplyChainAdmin(admin.ModelAdmin):
-    list_display = ("name", "description", "step_count")
+    list_display = ("name", "description", "step_count", "delay_score_total")
     search_fields = ("name",)
     inlines = [ChainStepInline]
+    readonly_fields = ("delay_score_total",)  # im Detail-Form anzeigen (read-only)
+    fields = ("name", "description", "delay_score_total")  # Reihenfolge im Formular
 
-    def step_count(self, obj):
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # vermeidet N+1, weil get_delay_score() über steps/edges geht
+        return qs.prefetch_related("steps__edge")
+
+    @admin.display(description="Deliver Time (Total)")
+    def delay_score_total(self, obj: SupplyChain):
+        # runde für die Liste hübsch
+        return round(obj.get_delay_score(), 2)
+
+    @admin.display(description="Steps")
+    def step_count(self, obj: SupplyChain):
         return obj.steps.count()
-    step_count.short_description = "Steps"
 
 
 # -----------------------------
@@ -78,6 +90,7 @@ class EdgeAdmin(admin.ModelAdmin):
     list_select_related = ("from_node__country", "to_node__country")
     autocomplete_fields = ("from_node", "to_node")
     filter_horizontal = ("risks",)
+    readonly_fields = ("delay_score",)
 
 
 # -----------------------------
@@ -89,6 +102,7 @@ class NodeAdmin(admin.ModelAdmin):
     list_filter = ("country", "node_role", "ownership", "capacity_class")
     search_fields = ("city__name", "country__name")
     filter_horizontal = ("risks",)
+    readonly_fields = ("delay_score",)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "city" and request.POST.get("country"):
