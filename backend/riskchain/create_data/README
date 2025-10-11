@@ -1,0 +1,4 @@
+To Create data go into shell:
+python manage.py shell
+
+Then copy all the contet of the python file in the terminal
