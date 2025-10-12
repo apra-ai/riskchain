@@ -12,3 +12,5 @@
 *.pyc
 *qdrant.db*
 supplychains_sequences.npz
+rnn_model_*
+scaler_y*

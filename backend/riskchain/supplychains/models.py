@@ -211,6 +211,7 @@ class Edge(models.Model):
 class SupplyChain(models.Model):
     name = models.CharField(max_length=120)
     description = models.TextField()
+    predicted_delay = models.FloatField(blank=True, null=True, editable=False)
 
     def __str__(self):
         return f"{self.name}"

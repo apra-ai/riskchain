@@ -9,6 +9,7 @@ from torch.amp import autocast, GradScaler
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score
+import joblib
 
 # -----------------------------
 # Data loading (variable length -> padded to maxlen)
@@ -193,6 +194,8 @@ def main():
         use_cuda=use_cuda,
     )
 
+    joblib.dump(scaler_y, "models/scaler_y.pkl")
+
     # Modell / Optimizer / Loss / AMP
     model = RNNModel(
         input_size=feat_dim,
@@ -268,6 +271,7 @@ def main():
                 f"Train Loss: {train_loss:.4f} | "
                 f"Val MAE: {val_mae_scaled:.4f} | R²: {r2_scaled:.3f}"
             )
+        torch.save(model.state_dict(), f"models/rnn_model_{epoch}.pt")
 
 
 if __name__ == "__main__":

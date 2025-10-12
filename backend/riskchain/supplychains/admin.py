@@ -55,10 +55,10 @@ class ChainStepInline(admin.TabularInline):
 # -----------------------------
 @admin.register(SupplyChain)
 class SupplyChainAdmin(admin.ModelAdmin):
-    list_display = ("name", "description", "step_count", "delay_score_total")
+    list_display = ("name", "description", "step_count", "delay_score_total", "predicted_delay")
     search_fields = ("name",)
     inlines = [ChainStepInline]
-    readonly_fields = ("delay_score_total",)  # im Detail-Form anzeigen (read-only)
+    readonly_fields = ("delay_score_total", "predicted_delay")  # im Detail-Form anzeigen (read-only)
     fields = ("name", "description", "delay_score_total")  # Reihenfolge im Formular
 
     def get_queryset(self, request):
