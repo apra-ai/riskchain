@@ -63,20 +63,20 @@ TRANSPORT_MODES_CHOICES_VALUES = {
 for node in Node.objects.all():
     delay_score = 1
     sigma = 0.5 # Standardabweichung für die Gaußsche Verteilung
-    delay_score *= max(1, random.gauss(NODE_ROLE_CHOICES_VALUES.get(node.node_role, 1),sigma))
+    delay_score += max(1, random.gauss(NODE_ROLE_CHOICES_VALUES.get(node.node_role, 1),sigma))
     delay_score += max(1, random.gauss(OWNERSHIP_CHOICES_VALUES.get(node.ownership, 1),sigma))
-    delay_score *= max(1, random.gauss(CAPACITY_CLASS_CHOICES_VALUES.get(node.capacity_class, 1),sigma))
+    delay_score += max(1, random.gauss(CAPACITY_CLASS_CHOICES_VALUES.get(node.capacity_class, 1),sigma))
     node.delay_score = delay_score
     node.save()
 
 for edge in Edge.objects.all():
     delay_score = 1
     sigma = 0.5 # Standardabweichung für die Gaußsche Verteilung
-    delay_score *= max(1, random.gauss(CROSSES_BORDER_VALUES.get(edge.crosses_border, 1),sigma))
-    delay_score *= max(1, random.gauss(COST_CLASS_VALUES.get(edge.cost, 1),sigma))
-    delay_score *= max(1, random.gauss(RELIABILITY_CLASS_VALUES.get(edge.reliability, 1),sigma))
-    delay_score *= max(1, random.gauss(DISTANCE_CLASS_VALUES.get(edge.distance, 1),sigma))
-    delay_score *= max(1, random.gauss(TRANSPORT_MODES_CHOICES_VALUES.get(edge.transport_modes, 1),sigma))
+    delay_score += max(1, random.gauss(CROSSES_BORDER_VALUES.get(edge.crosses_border, 1),sigma))
+    delay_score += max(1, random.gauss(COST_CLASS_VALUES.get(edge.cost, 1),sigma))
+    delay_score += max(1, random.gauss(RELIABILITY_CLASS_VALUES.get(edge.reliability, 1),sigma))
+    delay_score += max(1, random.gauss(DISTANCE_CLASS_VALUES.get(edge.distance, 1),sigma))
+    delay_score += max(1, random.gauss(TRANSPORT_MODES_CHOICES_VALUES.get(edge.transport_modes, 1),sigma))
     delay_score += edge.from_node.delay_score
     delay_score += edge.to_node.delay_score
     edge.delay_score = delay_score

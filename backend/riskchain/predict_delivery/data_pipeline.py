@@ -45,7 +45,7 @@ def build_npz(
 
     X_list, lengths_list, eff_list, mask_list, y_list = [], [], [], [], []
 
-    for sc in queryset.iterator():
+    for sc in queryset.iterator(chunk_size=1000):
         seq = encode_supplychain_chain(sc, node_enc, edge_enc)  # List[List[int]]
         if not seq:
             continue
