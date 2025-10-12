@@ -65,7 +65,7 @@ for node in Node.objects.all():
     sigma = 0.5 # Standardabweichung für die Gaußsche Verteilung
     delay_score *= max(1, random.gauss(NODE_ROLE_CHOICES_VALUES.get(node.node_role, 1),sigma))
     delay_score += max(1, random.gauss(OWNERSHIP_CHOICES_VALUES.get(node.ownership, 1),sigma))
-    delay_score *= max(1, random.gauss(CAPACITY_CLASS_CHOICES_VALUES.get(node.capacity_class, 1),10))
+    delay_score *= max(1, random.gauss(CAPACITY_CLASS_CHOICES_VALUES.get(node.capacity_class, 1),sigma))
     node.delay_score = delay_score
     node.save()
 

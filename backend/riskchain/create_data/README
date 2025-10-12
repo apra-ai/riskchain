@@ -5,7 +5,7 @@ python manage.py shell < create_data/create_locations.py
 # Create Nodes
 python manage.py shell < create_data/create_nodes.py
 # Create SupplyChains, ChainSteps and Edges
-python manage.py shell -c "from create_data.create_supplychains import generate_supplychains; print('Created', generate_supplychains(count=5000, min_len=4, max_len=7, seed=42), 'chains')"
+python manage.py shell -c "from create_data.create_supplychains import generate_supplychains; print('Created', generate_supplychains(count=50000, min_len=4, max_len=7, seed=42), 'chains')"
 
 # Create all supply durations
 python manage.py shell < create_data/calculate_supply_duration.py
