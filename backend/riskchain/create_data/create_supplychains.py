@@ -63,7 +63,6 @@ def generate_supplychains(
             supply_chain = SupplyChain.objects.create(
                 name=f"Supply Chain {i+1}",
                 description=f"From {origin_city} to {dest_city}",
-                supply_duration_days=1
             )
 
             # Kanten + Steps erzeugen (linear verbinden)
