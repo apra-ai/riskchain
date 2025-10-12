@@ -147,6 +147,9 @@ class Node(models.Model):
 
     risks = models.ManyToManyField(Risk, related_name='nodes', blank=True)
 
+    def onehot(self, encoder: "NodeOneHotEncoder"):   # <- String statt Import
+        return encoder.encode(self)
+
     def __str__(self):
         return f"{self.country}({self.city})"
 
@@ -197,6 +200,9 @@ class Edge(models.Model):
                 name="edge_no_self_loop",
             )
         ]
+    
+    def onehot(self, encoder: "EdgeOneHotEncoder"):
+        return encoder.encode(self)
 
     def __str__(self):
         return f"({self.from_node}) -> ({self.to_node}), ({self.transport_modes})"

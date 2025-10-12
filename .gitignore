@@ -11,3 +11,4 @@
 .DS_Store
 *.pyc
 *qdrant.db*
+supplychains_sequences.npz
