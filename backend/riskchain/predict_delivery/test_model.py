@@ -37,8 +37,8 @@ def predict_supplychain_delay(supply_chain,model,node_enc,edge_enc,scaler_y, max
 
 def predict_supplychains_delay():
     input_size=50
-    hidden_size=64
-    num_layers=2
+    hidden_size=128
+    num_layers=3
     output_size=1
 
     model = RNNModel(input_size, hidden_size, num_layers, output_size)
@@ -52,5 +52,8 @@ def predict_supplychains_delay():
 
     for supply_chain in SupplyChain.objects.all():
         y_pred_real, y_pred_scaled = predict_supplychain_delay(supply_chain,model,node_enc,edge_enc, scaler_y)
+        # print("----")
+        # print(f"SupplyChain ID: {supply_chain.id}, Predicted Delay: {y_pred_real:.2f} days (scaled: {y_pred_scaled:.4f})")
+        # print(f"Actual Delay: {supply_chain.get_delay_score()} days")
         supply_chain.predicted_delay = y_pred_real
         supply_chain.save()

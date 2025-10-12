@@ -169,7 +169,7 @@ class RNNModel(nn.Module):
 # -----------------------------
 def main():
     # Hyperparameter
-    learning_rate = 1e-3
+    learning_rate = 0.0001
     num_epochs = 1000
     batch_size = 64
     maxlen = 10
@@ -199,8 +199,8 @@ def main():
     # Modell / Optimizer / Loss / AMP
     model = RNNModel(
         input_size=feat_dim,
-        hidden_size=64,
-        num_layers=2,
+        hidden_size=128,
+        num_layers=3,
         output_size=1,
         dropout=0.2
     ).to(device)
