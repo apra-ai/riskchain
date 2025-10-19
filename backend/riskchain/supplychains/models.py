@@ -215,6 +215,14 @@ class SupplyChain(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+    
+    def get_seperated_delay_score(self):
+        supply_duration_days_seperated = []
+        summed_up = 0
+        for step in self.steps.all():
+            summed_up += step.edge.delay_score
+            supply_duration_days_seperated.append(summed_up)
+        return supply_duration_days_seperated
 
     def get_delay_score(self):
         supply_duration_days = 0
@@ -278,3 +286,37 @@ class ChainStep(models.Model):
 
     def __str__(self):
         return f"{self.chain} | {self.position}: {self.edge.from_node} → {self.edge.to_node}"
+
+class Hold(models.Model):
+    HOLD_TYPE_CHOICES = [
+        ("PRODUCTION", "Production Hold"),
+        ("TRANSPORT", "Transport Hold"),
+        ("INVENTORY", "Inventory Hold"),
+        ("ADMIN", "Administrative Hold"),
+        ("EXTERNAL", "External / Environmental Hold"),
+    ]
+
+    SEVERITY_CHOICES = [(i, str(i)) for i in range(1, 6)]  # 1–5
+
+    node = models.ForeignKey(
+        "Node",
+        on_delete=models.CASCADE,
+        related_name="holds",
+        help_text="Node, an dem der Hold auftritt."
+    )
+
+    hold_type = models.CharField(
+        max_length=20,
+        choices=HOLD_TYPE_CHOICES,
+        default="PRODUCTION",
+        help_text="Art des Hold-Ereignisses."
+    )
+
+    severity = models.IntegerField(
+        choices=SEVERITY_CHOICES,
+        default=1,
+        help_text="Schweregrad des Holds (1 = gering, 5 = kritisch)."
+    )
+
+    def __str__(self):
+        return f"{self.node} – {self.get_hold_type_display()} (Severity {self.severity})"

@@ -7,24 +7,12 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from torch.amp import autocast, GradScaler
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score
-import joblib
 
 # -----------------------------
-# Data loading (variable length -> padded to maxlen)
+# Data loading
 # -----------------------------
 def load_npz(filename: str = "supplychains_sequences.npz", maxlen: int = 10):
-    """
-    Lädt variable Sequenzen (X als object-Array) und pad/truncate't zur Laufzeit auf `maxlen`.
-    Rückgabe:
-      X_padded: [N, maxlen, feat_dim] (float32)
-      lengths : [N]  (Original-Längen)
-      eff_len : [N]  (min(length, maxlen))
-      y       : [N]  (float32)
-      feat_dim: int
-      maxlen  : int
-    """
     here = os.path.dirname(os.path.abspath(__file__))
     path = os.path.join(here, filename)
     if not os.path.exists(path):
@@ -33,7 +21,7 @@ def load_npz(filename: str = "supplychains_sequences.npz", maxlen: int = 10):
     data = np.load(path, allow_pickle=True)
     files = set(data.files)
 
-    X_var = data["X"]                      # array(dtype=object), jedes Element: (L_i, F)
+    X_var = data["X"]
     y = data["y"].astype(np.float32)
     lengths = data["lengths"].astype(np.int32) if "lengths" in files else np.array(
         [len(seq) for seq in X_var], dtype=np.int32
@@ -58,7 +46,7 @@ def load_npz(filename: str = "supplychains_sequences.npz", maxlen: int = 10):
     eff_len = np.zeros(N, dtype=np.int32)
 
     for i, seq in enumerate(X_var):
-        arr = np.asarray(seq, dtype=np.float32)  # (L_i, F) oder (0,)
+        arr = np.asarray(seq, dtype=np.float32)
         L = arr.shape[0] if arr.ndim == 2 else 0
         L_eff = min(L, maxlen)
         eff_len[i] = L_eff
@@ -73,7 +61,7 @@ def load_npz(filename: str = "supplychains_sequences.npz", maxlen: int = 10):
 
 
 # -----------------------------
-# Dataloaders (mit y-Skalierung nur auf Train)
+# Dataloaders (ohne y-Skalierung)
 # -----------------------------
 def create_dataloaders(
     X,
@@ -82,16 +70,8 @@ def create_dataloaders(
     batch_size: int = 64,
     test_size: float = 0.2,
     random_state: int = 42,
-    scale_y: bool = True,
-    existing_scaler: StandardScaler | None = None,
     use_cuda: bool = False,
 ):
-    """
-    Split in Train/Test, skaliert y NUR auf Basis der Trainingsdaten (falls scale_y=True),
-    baut PyTorch DataLoader und liefert zusätzlich den verwendeten StandardScaler zurück.
-    Rückgabe:
-      train_loader, test_loader, scaler_y, (train_idx, test_idx)
-    """
     idx = np.arange(len(X))
     train_idx, test_idx = train_test_split(
         idx, test_size=test_size, random_state=random_state, shuffle=True
@@ -101,25 +81,12 @@ def create_dataloaders(
     y_train, y_test = y[train_idx], y[test_idx]
     len_train, len_test = eff_len[train_idx], eff_len[test_idx]
 
-    scaler_y = existing_scaler
-    if scale_y:
-        if scaler_y is None:
-            scaler_y = StandardScaler()
-            y_train_scaled = scaler_y.fit_transform(y_train.reshape(-1, 1)).squeeze()
-        else:
-            y_train_scaled = scaler_y.transform(y_train.reshape(-1, 1)).squeeze()
-        y_test_scaled = scaler_y.transform(y_test.reshape(-1, 1)).squeeze()
-    else:
-        y_train_scaled = y_train
-        y_test_scaled = y_test
-        scaler_y = None
-
     X_train_t = torch.tensor(X_train, dtype=torch.float32)
-    y_train_t = torch.tensor(y_train_scaled, dtype=torch.float32)
+    y_train_t = torch.tensor(y_train, dtype=torch.float32)
     len_train_t = torch.tensor(len_train, dtype=torch.int64)
 
     X_test_t = torch.tensor(X_test, dtype=torch.float32)
-    y_test_t = torch.tensor(y_test_scaled, dtype=torch.float32)
+    y_test_t = torch.tensor(y_test, dtype=torch.float32)
     len_test_t = torch.tensor(len_test, dtype=torch.int64)
 
     pin = bool(use_cuda)
@@ -132,7 +99,7 @@ def create_dataloaders(
     print(f"Train Batches: {len(train_loader)} | Test Batches: {len(test_loader)}")
     print(f"Batch Size: {batch_size} | Features: {X.shape[-1]} | Maxlen: {X.shape[1]}")
 
-    return train_loader, test_loader, scaler_y, (train_idx, test_idx)
+    return train_loader, test_loader, (train_idx, test_idx)
 
 
 # -----------------------------
@@ -157,46 +124,35 @@ class RNNModel(nn.Module):
         packed_output, _ = self.rnn(packed_input)
         output, _ = nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
 
-        # letzter gültiger Zeitschritt je Sequenz
         idx = (lengths - 1).view(-1, 1).expand(len(lengths), output.size(2)).unsqueeze(1)
         last_outputs = output.gather(1, idx).squeeze(1)
-
         return self.fc(last_outputs).squeeze()
 
 
 # -----------------------------
-# Train / Eval
+# Train / Eval (ohne Scaler)
 # -----------------------------
 def main():
-    # Hyperparameter
     learning_rate = 0.0001
     num_epochs = 1000
     batch_size = 64
     maxlen = 10
 
-    # Daten
     X, lengths, eff_len, y, feat_dim, maxlen = load_npz(maxlen=maxlen)
 
-    # Gerät
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device_type = "cuda" if device.type == "cuda" else "cpu"
     use_cuda = (device.type == "cuda")
     print("Training on:", device)
 
-    # Dataloader
-    train_loader, test_loader, scaler_y, _ = create_dataloaders(
+    train_loader, test_loader, _ = create_dataloaders(
         X, y, eff_len,
         batch_size=batch_size,
         test_size=0.2,
         random_state=42,
-        scale_y=True,
-        existing_scaler=None,
         use_cuda=use_cuda,
     )
 
-    joblib.dump(scaler_y, "models/scaler_y.pkl")
-
-    # Modell / Optimizer / Loss / AMP
     model = RNNModel(
         input_size=feat_dim,
         hidden_size=128,
@@ -205,11 +161,10 @@ def main():
         dropout=0.2
     ).to(device)
 
-    criterion = nn.SmoothL1Loss(beta=1.0)  # Huber
+    criterion = nn.SmoothL1Loss(beta=1.0)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scaler = GradScaler(enabled=use_cuda)
 
-    # Training Loop
     for epoch in range(1, num_epochs + 1):
         model.train()
         train_loss_sum = 0.0
@@ -217,7 +172,7 @@ def main():
         for X_batch, len_batch, y_batch in train_loader:
             X_batch = X_batch.to(device, non_blocking=use_cuda)
             y_batch = y_batch.to(device, non_blocking=use_cuda)
-            len_cpu = len_batch.cpu()  # pack_padded_sequence erwartet CPU
+            len_cpu = len_batch.cpu()
 
             optimizer.zero_grad(set_to_none=True)
             with autocast(device_type):
@@ -233,9 +188,9 @@ def main():
 
         train_loss = train_loss_sum / len(train_loader.dataset)
 
-        # Evaluation (auf skalierten Zielen)
+        # Evaluation (direkt auf realen Werten)
         model.eval()
-        y_true_scaled, y_pred_scaled = [], []
+        y_true, y_pred = [], []
         with torch.no_grad():
             for X_batch, len_batch, y_batch in test_loader:
                 X_batch = X_batch.to(device, non_blocking=use_cuda)
@@ -243,34 +198,21 @@ def main():
                 len_cpu = len_batch.cpu()
                 preds = model(X_batch, len_cpu)
 
-                y_true_scaled.extend(y_batch.cpu().numpy())
-                y_pred_scaled.extend(preds.cpu().numpy())
+                y_true.extend(y_batch.cpu().numpy())
+                y_pred.extend(preds.cpu().numpy())
 
-        y_true_scaled = np.array(y_true_scaled)
-        y_pred_scaled = np.array(y_pred_scaled)
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
 
-        # Metriken (skaliert)
-        val_mae_scaled = np.mean(np.abs(y_true_scaled - y_pred_scaled))
-        r2_scaled = r2_score(y_true_scaled, y_pred_scaled)
+        val_mae = np.mean(np.abs(y_true - y_pred))
+        r2 = r2_score(y_true, y_pred)
 
-        # Optional: Metriken in Originaleinheiten (falls skaliert)
-        if scaler_y is not None:
-            y_true_real = scaler_y.inverse_transform(y_true_scaled.reshape(-1, 1)).squeeze()
-            y_pred_real = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1)).squeeze()
-            val_mae_real = np.mean(np.abs(y_true_real - y_pred_real))
-            r2_real = r2_score(y_true_real, y_pred_real)
-            print(
-                f"Epoch [{epoch}/{num_epochs}] "
-                f"Train Loss: {train_loss:.4f} | "
-                f"Val MAE (scaled): {val_mae_scaled:.4f} | R² (scaled): {r2_scaled:.3f} | "
-                f"Val MAE (real): {val_mae_real:.4f} | R² (real): {r2_real:.3f}"
-            )
-        else:
-            print(
-                f"Epoch [{epoch}/{num_epochs}] "
-                f"Train Loss: {train_loss:.4f} | "
-                f"Val MAE: {val_mae_scaled:.4f} | R²: {r2_scaled:.3f}"
-            )
+        print(
+            f"Epoch [{epoch}/{num_epochs}] "
+            f"Train Loss: {train_loss:.4f} | "
+            f"Val MAE: {val_mae:.4f} | R²: {r2:.3f}"
+        )
+
         torch.save(model.state_dict(), f"models/rnn_model_{epoch}.pt")
 
 

@@ -1,7 +1,8 @@
 from django.contrib import admin
-from .models import Node, Edge, Risk, SupplyChain, Country, City, ChainStep
+from .models import Node, Edge, Risk, SupplyChain, Country, City, ChainStep, Hold
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
+from django.utils.html import format_html, format_html_join
 
 
 # -----------------------------
@@ -55,25 +56,38 @@ class ChainStepInline(admin.TabularInline):
 # -----------------------------
 @admin.register(SupplyChain)
 class SupplyChainAdmin(admin.ModelAdmin):
-    list_display = ("name", "description", "step_count", "delay_score_total", "predicted_delay")
+    list_display = ("name", "description", "step_count", "delay_score_total", "delay_score_list","delay_score_sum",)
     search_fields = ("name",)
     inlines = [ChainStepInline]
-    readonly_fields = ("delay_score_total", "predicted_delay")  # im Detail-Form anzeigen (read-only)
-    fields = ("name", "description", "delay_score_total")  # Reihenfolge im Formular
+    readonly_fields = ("delay_score_total", "predicted_delay", "delay_score_list")
+    fields = ("name", "description", "delay_score_total", "delay_score_list")
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        # vermeidet N+1, weil get_delay_score() über steps/edges geht
         return qs.prefetch_related("steps__edge")
 
     @admin.display(description="Deliver Time (Total)")
-    def delay_score_total(self, obj: SupplyChain):
-        # runde für die Liste hübsch
+    def delay_score_total(self, obj: "SupplyChain"):
         return round(obj.get_delay_score(), 2)
 
     @admin.display(description="Steps")
-    def step_count(self, obj: SupplyChain):
+    def step_count(self, obj: "SupplyChain"):
         return obj.steps.count()
+
+    @admin.display(description="Delay per Step (cum.)")
+    def delay_score_list(self, obj: "SupplyChain"):
+        vals = obj.get_seperated_delay_score() or []
+        if not vals:
+            return "-"
+        return ", ".join(f"{v:.2f}" for v in vals)
+
+    @admin.display(description="Sum Delay (cum.)")
+    def delay_score_sum(self, obj: "SupplyChain"):
+        vals = obj.get_seperated_delay_score() or []
+        if not vals:
+            return "-"
+        total = sum(vals)
+        return f"{total:.2f}"
 
 
 # -----------------------------
@@ -135,3 +149,9 @@ class RiskAdmin(admin.ModelAdmin):
     list_display = ("name","risk_type")
     list_filter = ("risk_type",)
     search_fields = ("name", "description")
+
+@admin.register(Hold)
+class HoldAdmin(admin.ModelAdmin):
+    list_display = ("node", "hold_type", "severity", )
+    list_filter = ("hold_type", "severity")
+    search_fields = ("node__name",)

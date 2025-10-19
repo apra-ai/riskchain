@@ -43,10 +43,10 @@ def build_npz(
             )
         )
 
-    X_list, lengths_list, eff_list, mask_list, y_list = [], [], [], [], []
+    X_list, lengths_list, eff_list, mask_list, y_raw_list = [], [], [], [], []
 
     for sc in queryset.iterator(chunk_size=1000):
-        seq = encode_supplychain_chain(sc, node_enc, edge_enc)  # List[List[int]]
+        seq = encode_supplychain_chain(sc, node_enc, edge_enc)
         if not seq:
             continue
 
@@ -60,33 +60,57 @@ def build_npz(
         m[:eff_L] = 1.0
 
         X_list.append(arr)
-        lengths_list.append(L)        # Original
-        eff_list.append(eff_L)        # effektiv genutzt
+        lengths_list.append(L)
+        eff_list.append(eff_L)
         mask_list.append(m)
-        y_list.append(float(sc.get_delay_score()))
+
+        # NEU: y als Liste sammeln (unterschiedliche Länge)
+        y_vals = sc.get_seperated_delay_score()                 # <- jetzt Liste
+        y_raw_list.append(np.asarray(y_vals, dtype=np.float32))
 
     if not X_list:
         raise ValueError("Keine nicht-leeren Sequenzen gefunden – nichts zu speichern.")
 
-    X = np.stack(X_list, axis=0)                          # [N, maxlen, feat_dim]
-    lengths = np.asarray(lengths_list, dtype=np.int32)    # [N]
-    eff_len = np.asarray(eff_list, dtype=np.int32)        # [N]
-    mask = np.stack(mask_list, axis=0)                    # [N, maxlen]
-    y = np.asarray(y_list, dtype=np.float32)              # [N]
+    # Stapeln von X/Masken wie gehabt
+    X = np.stack(X_list, axis=0)                       # [N, maxlen, feat_dim]
+    lengths = np.asarray(lengths_list, dtype=np.int32) # [N]
+    eff_len = np.asarray(eff_list, dtype=np.int32)     # [N]
+    mask = np.stack(mask_list, axis=0)                 # [N, maxlen]
+
+    # --- NEU: y padden ---
+    N = len(y_raw_list)
+    y_len = np.asarray([len(v) for v in y_raw_list], dtype=np.int32)   # [N] Original-Längen
+    y_maxlen = int(y_len.max())                                        # Padding-Länge = max beobachtet
+    y = np.zeros((N, y_maxlen), dtype=np.float32)                      # [N, y_maxlen]
+    y_mask = np.zeros((N, y_maxlen), dtype=np.float32)                 # [N, y_maxlen]
+
+    for i, v in enumerate(y_raw_list):
+        L = len(v)
+        y[i, :L] = v
+        y_mask[i, :L] = 1.0
 
     np.savez_compressed(
         out_path,
         X=X,
-        lengths=lengths,   # original
-        eff_len=eff_len,   # min(original, maxlen)
+        lengths=lengths,    # Original-Länge der Schritte (X)
+        eff_len=eff_len,    # min(original, maxlen) für X
         mask=mask,
-        y=y,
+
+        # Targets:
+        y=y,                # gepaddet [N, y_maxlen]
+        y_len=y_len,        # Original-Längen je Sample
+        y_mask=y_mask,      # 1=realer Wert, 0=Padding
+        y_maxlen=y_maxlen,  # Meta
+
         feat_dim=int(feat_dim),
         maxlen=int(maxlen),
     )
 
     print(f"✅ Gespeichert: {out_path}")
-    print(f"Chains: {len(X)} | Feature-Dim: {feat_dim} | "
-          f"ØLänge(orig): {np.mean(lengths):.2f} | Max(orig): {np.max(lengths)} | maxlen: {maxlen}")
+    print(
+        f"Chains: {len(X)} | X-Feat-Dim: {feat_dim} | "
+        f"ØLänge(X orig): {np.mean(lengths):.2f} | Max(X orig): {np.max(lengths)} | maxlen: {maxlen} | "
+        f"y_maxlen: {y_maxlen} | ØLänge(y): {np.mean(y_len):.2f}"
+    )
 
     return out_path

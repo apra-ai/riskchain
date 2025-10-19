@@ -14,3 +14,4 @@
 supplychains_sequences.npz
 rnn_model_*
 scaler_y*
+encoder_decoder_epoch_*
