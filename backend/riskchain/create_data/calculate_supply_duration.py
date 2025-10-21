@@ -58,6 +58,14 @@ TRANSPORT_MODES_CHOICES_VALUES = {
     "INLAND_WATERWAY": 6,
 }
 
+HOLD_TYPE_CHOICES = {
+        "PRODUCTION":5,
+        "TRANSPORT"6,
+        "INVENTORY"2,
+        "ADMIN":2,
+        "EXTERNAL":8,
+}
+
 USE_RANDOM_NOISE = False
 SIGMA = 0.5
 
