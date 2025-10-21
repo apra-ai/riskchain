@@ -77,7 +77,15 @@ def noisy(value: float, sigma: float = SIGMA) -> float:
         return value
 
 for node in Node.objects.all():
+    holds = node.holds.all()
     delay_score = 1
+
+    for hold in holds:
+        hold_type = HOLD_TYPE_CHOICES[hold.hold_type]
+        severity = hold.severity
+        mult = hold_type*severity
+        delay_score += max(1, noisy(mult)
+
     delay_score += max(1, noisy(NODE_ROLE_CHOICES_VALUES.get(node.node_role, 1)))
     delay_score += max(1, noisy(OWNERSHIP_CHOICES_VALUES.get(node.ownership, 1)))
     delay_score += max(1, noisy(CAPACITY_CLASS_CHOICES_VALUES.get(node.capacity_class, 1)))
