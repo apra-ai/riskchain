@@ -6,6 +6,8 @@ import { Dashboard } from "@/components/dashboard"
 import { ProcessDetail } from "@/components/process-detail"
 
 export default function Home() {
+  // Keep the landing page state local so the demo can switch instantly between
+  // the portfolio-style overview and a process deep dive without routing setup.
   const [currentView, setCurrentView] = useState<"dashboard" | "process">("dashboard")
   const [selectedProcess, setSelectedProcess] = useState<string | null>(null)
 

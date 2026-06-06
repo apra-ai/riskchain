@@ -1,77 +1,158 @@
-# start frontend
+# RiskChain
 
-requirements: Node.js online downloaden (npm wird dann automatisch heruntergeladen)
+RiskChain is a full-stack prototype for supply chain risk monitoring. The project combines a Django backend, a Next.js frontend, and a multi-agent AI orchestration layer to identify geopolitical, logistics, and weather-related disruptions across supply chain nodes and transport edges.
 
-1. in das directory "frontend" gehen (cd frontend)
-2. npm install --legacy-peer-deps
-    hierbei werden alle wichtigen frontend packages heruntergeladen
-3. npm start
-    damit startet man standardmäßig den host auf "http://localhost:3000/"
+The repository is well suited as a portfolio project because it brings together three relevant engineering areas in one system:
 
-# start backend
+- graph-based supply chain modelling
+- REST API design with Django REST Framework
+- AI-assisted risk analysis using specialized agents and Azure OpenAI
 
-requirements: Python online herunterladen
+## What the project does
 
-1. in "backend" navigieren (cd backend)
-2. python -m venv .venv
-    venv erstellen worin man packages installiert
-3. .venv\Scripts\activate um virtuelle entwicklung zu aktivieren
-4. pip install -r requirements.txt um packages zu installieren
-5. in "riskchain" navigieren (cd riskchain)
-6. manage.py kann jetzt zum steuern benutzt werden
-    starten: python manage.py runserver
-        -> startet server, jetzt kann man auf
-        "http://localhost:8000/admin" gehen um das admin panel zu sehen
-        "http://localhost:8000/supplychains/supplychain" hier sieht man die api abfrage und man sieht alle supplychains
-        "http://localhost:8000/supplychains/supplychain/1/" heir sieht man die erste supplychain (man kann die 1 auch mit zwei tauschen etc, das ist die id die man auhc bei allen supplychains sieht)
-    superuser erstellen: python manage.py createsuperuser
-        -> dann terminal befolgen (email kann man weg lassen)
-        diese daten am besten merken die brauchst du auch um dich ins adminpanel "http://localhost:8000/admin" ein zu loggen
+RiskChain models a supply chain as a graph of nodes and edges:
 
+- nodes represent locations such as suppliers, ports, hubs, or destinations
+- edges represent transport links between those locations
+- risks can be attached to both nodes and edges
 
-# updaten requirements.txt
+The platform is designed to support questions such as:
 
-pip freeze > requirements.txt
+- Which parts of a supply chain are currently exposed to disruption?
+- Which transport legs are most vulnerable to delays?
+- Which external events should be surfaced for operational decision-making?
 
-# Codequalität garantieren
+## Architecture
 
-pylint datei.py
+### Frontend
 
-oder
+- Next.js 15 with React 19 and TypeScript
+- dashboard-style UI for browsing supply chain scenarios
+- component-based structure with reusable UI primitives
 
-pylint [ordner]
+### Backend
 
-# Start AI-Agent Orchestrator with shell
+- Django 5 and Django REST Framework
+- domain model for countries, cities, nodes, edges, risks, and supply chains
+- endpoints for querying supply chain data and triggering risk updates
 
+### AI layer
+
+- supervisor-based orchestration with LangGraph
+- specialized agents for geopolitical risk, weather and natural disasters, and logistics monitoring
+- Azure OpenAI integration for LLM-driven coordination
+
+## Repository structure
+
+```text
+frontend/   Next.js application for the dashboard and process views
+backend/    Python dependencies and Django project
+backend/riskchain/agents/        AI agents and supervisor orchestration
+backend/riskchain/supplychains/  domain models, serializers, and API views
+backend/riskchain/create_data/   helper scripts for generating demo data
+backend/riskchain/predict_delivery/  experiments for delay prediction models
+```
+
+## Local setup
+
+### Frontend
+
+Requirements:
+
+- Node.js 20+
+- npm
+
+Start the frontend:
+
+```bash
+cd frontend
+npm install --legacy-peer-deps
+npm run dev
+```
+
+The app will usually be available at `http://localhost:3000`.
+
+### Backend
+
+Requirements:
+
+- Python 3.11+
+
+Set up the backend:
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+cd riskchain
+python manage.py runserver
+```
+
+The Django app will usually be available at `http://localhost:8000`.
+
+Useful endpoints:
+
+- admin panel: `http://localhost:8000/admin`
+- all supply chains: `http://localhost:8000/supplychains/supplychain`
+- supply chain by id: `http://localhost:8000/supplychains/supplychain/1/`
+
+To create an admin user:
+
+```bash
+python manage.py createsuperuser
+```
+
+## Environment variables
+
+To enable the AI agents, create a `.env` file in `backend/riskchain/` next to `manage.py`.
+
+```env
+AZURE_OPENAI_API_KEY="your-key"
+AZURE_OPENAI_ENDPOINT="https://your-endpoint.openai.azure.com/"
+AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o"
+AZURE_OPENAI_API_VERSION="2024-12-01-preview"
+```
+
+The backend loads these values via `python-dotenv`, which keeps secrets out of the codebase and git history.
+
+## Trigger the AI orchestrator manually
+
+From a Django shell, the orchestrator can be run directly on stored nodes or edges:
+
+```python
 from agents.orchestrator_agent import process_node_with_supervisor, process_edge_with_supervisor
 from supplychains.models import Node, Edge
 
-node1 = Node.objects.all()[0]
-chunks = process_node_with_supervisor(node1)
+node = Node.objects.first()
+node_trace = process_node_with_supervisor(node)
 
-edge1 = Edge.objects.all()[12]
-chunks = process_edge_with_supervisor(edge1)
+edge = Edge.objects.first()
+edge_trace = process_edge_with_supervisor(edge)
+```
 
-# benutzen der API Keys
+This is useful for debugging agent behaviour and inspecting the generated trace output.
 
-im ordner wo manage.py liegt eine .env datei erstellen (also im riskchain ordner)
+## Quality checks
 
-AZURE_OPENAI_API_KEY="Key"
-AZURE_OPENAI_ENDPOINT="link"
-AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o"
-AZURE_OPENAI_API_VERSION="2024-12-01-preview"
+Python linting example:
 
-im code:
-from dotenv import load_dotenv
-import os
-load_dotenv()
+```bash
+pylint supplychains
+```
 
-AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
-AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
-AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
+To refresh backend dependencies after package changes:
 
-dadurch bekommt man key aus .env
-dann muss man nur noch in der .env die API keys eintragen
-das benutzt man da die API keys Geheim sind und man die dadurch nicht im code verlauf hat
-(sonst kann ejder in der History von commits beispielseise den KEY sehen)
+```bash
+pip freeze > requirements.txt
+```
+
+## Current status
+
+This repository is currently a strong prototype with three clear strengths:
+
+- a coherent end-to-end product idea
+- an ambitious AI orchestration layer connected to a real domain model
+- a frontend that can be used to present the concept visually
+
+The most natural next steps would be tighter frontend-backend integration, automated tests around the API and agent flows, and deployment-ready environment configuration.

@@ -68,6 +68,8 @@ interface Process {
 ]
  */
 
+// Curated example scenarios make the dashboard immediately understandable in a
+// portfolio setting, even when the backend is not populated with live data.
 const processes: Process[] = [
   {
     id: "1",
